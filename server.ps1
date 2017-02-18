@@ -1,22 +1,8 @@
-﻿
-function git_graph {
-    $graph ="digraph {`n"
-    $commits = git rev-list --all
-    foreach ($commit in $commits) {
-        $parents = (git rev-list --parents -n 1 $commit) -split " "
-        foreach ($parent in $parents[1..10]) {
-            $graph += "C$($parent.Substring(0,6)) -> C$($commit.Substring(0,6))`n"
-        }
-    }
-    $graph += "}"
-    return $graph
-}
-
-Set-Location "C:\GitHub\scott"
+﻿Set-Location "C:\GitHub\scott"
 Start-Process -PSPath "http://localhost:8008/"
 $routes = @{
-    "/" = { return (git_graph | dot.exe -Tsvg) }
-    "/raw" = { return (git_graph) }
+    "/" = { return ((Invoke-Expression -Command .\graph.ps1) | dot.exe -Tsvg) }
+    "/raw" = { return (Invoke-Expression -Command .\graph.ps1) }
 }
 
 $url = 'http://localhost:8008/'
