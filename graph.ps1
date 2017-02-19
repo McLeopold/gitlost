@@ -1,6 +1,5 @@
-﻿$graph ="digraph {`n"
-$graph += "layout=dot`n"
-$graph += "rankdir=BT`n"
+﻿$graph ="digraph GitViz {`n"
+$graph += "graph [layout=dot rankdir=BT bgcolor=`"#808080`" title=`"Test`"]`n"
 $commits = git rev-list --all
 foreach ($commit in $commits) {
     $parents = (git rev-list --parents -n 1 $commit) -split " "
@@ -20,7 +19,7 @@ foreach ($ref in $refs) {
     $values[1] = $values[1] -replace "refs/heads/", ""
     $values[1] = $values[1] -replace "refs/remotes/", ""
     $names += $values[1]
-    $graph += "`"$($values[1])`"[shape=cds;tooltip=`"$($values[1])`";href=`"show/$($values[1])`";fontname=Calibri;fontsize=9]`n"
+    $graph += "`"$($values[1])`"[shape=cds;tooltip=`"$($values[1])`";href=`"show/$($values[1])`";fontname=Calibri;fontsize=9 width=0.25 height=0.25]`n"
     $graph += "{rank=same; `"$($values[1])`" -> `"$($values[0])`"}`n"
 }
 #$graph += "{rank=same $($names -join " ")}"
