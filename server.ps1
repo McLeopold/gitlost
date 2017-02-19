@@ -4,7 +4,7 @@ $routes = @{
     "^/$" = { return ((Invoke-Expression -Command .\graph.ps1) | dot.exe -Tsvg) }
     "^/raw$" = { return (Invoke-Expression -Command .\graph.ps1) }
     "^/kill$" = { Exit }
-    "^/show/(\w+)$" = {
+    "^/show/(.+)$" = {
         param([string[]]$args)
         Write-Host $args
         return "<pre>$((git show $args) -join "`n")</pre>"
@@ -28,6 +28,7 @@ while ($listener.IsListening)
     Write-Host "> $requestUrl"
 
     $localPath = $requestUrl.LocalPath
+    Write-Host $requestUrl.LocalPath
     $matched = $false
     foreach ($route_entry in $routes.GetEnumerator()) {
         $match = [regex]::Match($localPath, $route_entry.Key)
