@@ -1,5 +1,5 @@
 ﻿# save directory script was imported from
-$web_dir = (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$web_dir = $PSScriptRoot
 
 function Show-GitViz {
     $git_dir = Get-Location
