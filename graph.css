@@ -1,0 +1,9 @@
+body {
+    font-family: Consolas, monospace;
+}
+
+#close {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
