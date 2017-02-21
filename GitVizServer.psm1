@@ -4,12 +4,10 @@ $web_dir = (Split-Path -Parent $MyInvocation.MyCommand.Path)
 function Show-GitViz {
     $git_dir = Get-Location
     $web_host = "http://localhost:6776/"
-    $log_file = Join-Path -Path $web_dir -ChildPath "log.txt"
 
     Write-Host $git_dir
     Write-Host $web_dir
     Write-Host $web_host
-    Write-Host $log_file
 
     Start-Process -PSPath ($web_host)
 
@@ -41,7 +39,7 @@ function Show-GitViz {
             $watcher.EnableRaisingEvents = $false
             $watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite -bor [System.IO.NotifyFilters]::FileName
             $results = @()
-            $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bOr [System.IO.WatcherChangeTypes]::Created, 60000);
+            $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bOr [System.IO.WatcherChangeTypes]::Created, 5000);
             $results += $result
             if ($result.TimedOut -eq $false) {
                 # wait for 1 second of inactivity

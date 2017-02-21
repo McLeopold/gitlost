@@ -24,12 +24,12 @@ foreach ($branch_info in $branches) {
     $branch_commit = $info[0]
     $branch = $info[1]
 
-    $graph += "    `"$($branch)`" [shape=cds tooltip=`"$($branch)`" href=`"show/$($branch)`" fontname=Calibri fontsize=9 width=0.25 height=0.25]`n"
-    $graph += "    { rank=same; `"$($branch)`" -> `"$($branch_commit)`" }`n`n"
 
     $graph += "  subgraph cluster_$($branch) {`n"
     $graph += "    color=`"#ffffff`";`n"
-    $graph += "    label=`"$($branch)`"`n`n"
+    #$graph += "    label=`"$($branch)`"`n`n"
+    $graph += "    `"$($branch)`" [shape=cds tooltip=`"$($branch)`" href=`"show/$($branch)`" fontname=Calibri fontsize=9 width=0.25 height=0.25]`n"
+    $graph += "    { `"$($branch_commit)`" -> `"$($branch)`" }`n`n"
     $branch_commits = git log $branch --first-parent --format=%h
     foreach ($branch_commit in $branch_commits) {
         if (-not $commit_branch.ContainsKey($branch_commit)) {
