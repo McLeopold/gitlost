@@ -54,25 +54,27 @@ foreach ($ref_search in @("master", "deploy", "")) {
             #$graph += "    `"$($branch)`" [label=`"$($branch)`" style=`"filled`" color=`"#404040`" fontcolor=`"#ffffff`" shape=cds tooltip=`"$($branch)`" href=`"show/$($branch)`" fontname=Calibri fontsize=10 width=0 height=0]`n"
             $graph += "    subgraph `"$($branch)_head`" {`n"
             $graph += "      color=`"#ffffff`";`n"
-            $graph += "      edge [color=`"#404040`" arrowhead=none penwidth=2]`n`n"
+            $graph += "      edge [color=`"#c0c0c0`" arrowhead=none penwidth=2]`n`n"
             #$graph += "      `"$($branch_commit)`" -> `"$($branch)`"`n"
+            $labels = @()
             foreach ($ref in $ref_list) {
                 if ($refs.Get_Item($ref) -eq $branch_commit) {
                     $refs_used.Add($ref, $branch_commit)
-                    $color = "#80ff80"
+                    $color = "#60c060"
                     if ($tags.Length -gt 0 -and $tags.Contains($ref)) {
-                        $color = "#ffff80"
+                        $color = "#c0c060"
                     } elseif ($ref.IndexOf("/") -ne -1) {
-                        $color = "#ff80ff"
+                        $color = "#c06060"
                     } elseif ($ref -eq "HEAD") {
-                        $color = "#80ffff"
+                        $color = "#60c0c0"
                     } elseif ($ref -eq "stash") {
                         $color = "#808080"
                     }
-                    $graph += "    `"$($ref)`" [label=<$($ref)> style=`"filled`" color=`"#404040`" fontcolor=`"$($color)`" shape=cds tooltip=`"$($ref)`" href=`"show/$($ref)`" fontname=Calibri fontsize=10 width=0 height=0]`n"
-                    $graph += "      `"$($branch_commit)`" -> `"$($ref)`"`n"
+                    $labels += "<tr><td align=`"left`" valign=`"bottom`" href=`"show/$($ref)`" bgcolor=`"#ffffff`"><font color=`"$($color)`">$($ref.Substring(0, [math]::min(30, $ref.Length)))</font></td></tr>"
                 }
             }
+            $graph += "    `"$($branch)`" [label=<<table border=`"0`" cellpadding=`"0px`" cellspacing=`"0px`">`n$($labels -join "`n")`n</table>> shape=none tooltip=`"$($branch)`" fixedsize=shape fontname=Calibri fontsize=10 width=0.5 height=0.25]`n"
+            $graph += "      `"$($branch_commit)`" -> `"$($branch)`"`n"
             $graph += "    }`n`n"
             $graph += "  subgraph `"cluster_$($branch)`" {`n"
             $graph += "    color=`"#ffffff`";`n"
