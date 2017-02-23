@@ -64,7 +64,7 @@ function Show-GitViz {
                 $watcher.EnableRaisingEvents = $false
                 $watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite -bor [System.IO.NotifyFilters]::FileName
                 $results = @()
-                $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bOr [System.IO.WatcherChangeTypes]::Created, 60000);
+                $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bOr [System.IO.WatcherChangeTypes]::Created, 5000);
                 $results += $result
                 if ($result.TimedOut -eq $false) {
                     # wait for 1 second of inactivity
@@ -90,7 +90,7 @@ function Show-GitViz {
     $listener.Prefixes.Add($web_host)
     $listener.Start()
 
-    $RunspacePool = [RunspaceFactory ]::CreateRunspacePool(1, 5)
+    $RunspacePool = [RunspaceFactory ]::CreateRunspacePool(5, 10)
     $RunspacePool.Open()
 
     Write-Host "Listening at $web_host..."
@@ -110,18 +110,6 @@ function Show-GitViz {
             $listener.Close()
             continue
         }
-
-        <#
-        if ($localPath -eq "/svg") {
-            $content = ((Invoke-Expression -Command (Join-Path -Path $web_dir -ChildPath "graph.ps1")) | dot.exe -Tsvg) -join ""
-            $content = $content.Substring($content.IndexOf("<svg"))
-            $buffer = [System.Text.Encoding]::UTF8.GetBytes($content)
-            $response.ContentLength64 = $buffer.Length
-            $response.OutputStream.Write($buffer, 0, $buffer.Length)
-            $response.Close()
-            continue
-        }
-        #>
 
         $matched = $false
         foreach ($route_entry in $routes.GetEnumerator())
@@ -169,6 +157,7 @@ function Show-GitViz {
             $request_task.RunspacePool = $RunspacePool
             $task_result = $request_task.BeginInvoke()
         }
+        Start-Sleep -Milliseconds 50
     }
     $RunspacePool.Close()
 }
