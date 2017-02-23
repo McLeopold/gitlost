@@ -1,4 +1,5 @@
-﻿$graph ="digraph GitViz {`n"
+﻿try {
+$graph ="digraph GitViz {`n"
 $graph += "  graph [layout=dot rankdir=BT bgcolor=`"#ffffff`" title=`"Test`"]`n`n"
 
 $graph += "  { node [shape=box style=`"rounded,filled`" fixedsize=true width=0.6 height=0.4 fontcolor=`"#ffffff`" fontname=Consolas fontsize=10]`n"
@@ -30,8 +31,9 @@ $commit_color = @{}
 $refs = @{}
 $ref_list = @()
 $tags = git tag
-git for-each-ref refs --sort=-committerdate --sort=objecttype --format='%(refname:short) %(objectname) %(objecttype)' | ForEach-Object {
-    $info = $_ -split " "
+$each_refs = git for-each-ref refs --sort=-committerdate --sort=objecttype --format='%(refname:short) %(objectname) %(objecttype)'
+foreach ($each_ref in $each_refs) {
+    $info = $each_ref -split " "
     if ($info[2] -eq "tag") {
         # dereference annotated tag
         $info[1] = git rev-list -1 $info[0]
@@ -102,3 +104,6 @@ foreach ($commit in $commits) {
 $graph += "`n"
 $graph += "}"
 return $graph
+} catch {
+    return $_.Exception | Format-List -Force | Out-String
+}

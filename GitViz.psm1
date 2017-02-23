@@ -9,53 +9,81 @@ function Show-GitViz {
     Write-Host $web_dir
     Write-Host $web_host
 
-    Start-Process -PSPath ($web_host)
+    Start-Process -PSPath ($web_host + "")
 
     $routes = @{
         "^/$" = {
-            return Get-Content (Join-Path -Path $web_dir -ChildPath "graph.html") -raw
+            try {
+                return Get-Content (Join-Path -Path $web_dir -ChildPath "graph.html") -raw
+            } catch {
+                return $_.Exception | Format-List -Force | Out-String
+            }
         }
         "^/svg$" = {
-            $svg = ((Invoke-Expression -Command (Join-Path -Path $web_dir -ChildPath "graph.ps1")) | dot.exe -Tsvg) -join ""
-            $svg = $svg.Substring($svg.IndexOf("<svg"))
-            return $svg
+            try {
+                $command = Join-Path -Path $web_dir -ChildPath "graph.ps1"
+                $dot = Invoke-Expression -Command $command
+                $svg = $dot | dot.exe -Tsvg | Out-String
+                $svg = $svg.Substring([math]::max(0, $svg.IndexOf("<svg")))
+                return $svg
+            } catch {
+                return $_.Exception | Format-List -Force | Out-String
+            }
         }
         "^/dot$" = {
-            return (Invoke-Expression -Command (Join-Path -Path $web_dir -ChildPath "graph.ps1"))
+            try {
+                $dot = (Invoke-Expression -Command (Join-Path -Path $web_dirr -ChildPath "graph.ps1"))
+                return $dot
+            } catch {
+                return $_.Exception | Format-List -Force | Out-String
+            }
+
         }
         "^/show/(.+)$" = {
             param([string[]]$args)
-            return "<pre>$((git show $args) -join "`n")</pre>"
+            try {
+                return "<pre>$((git show $args) -join "`n")</pre>"
+            } catch {
+                return $_.Exception | Format-List -Force | Out-String
+            }
         }
         "^/([^/]+\.(html|css|js))$" = {
             param([string[]]$args)
-            return Get-Content (Join-Path -Path $web_dir -ChildPath $args[0]) -raw
+            try {
+                return Get-Content (Join-Path -Path $web_dir -ChildPath $args[0]) -raw
+            } catch {
+                return $_.Exception | Format-List -Force | Out-String
+            }
         }
         "^/watch$" = {
             param([string[]]$args)
-            $watcher = New-Object System.IO.FileSystemWatcher
-            $watcher.Path = (Join-Path -Path $git_dir -ChildPath ".git\logs")
-            $watcher.IncludeSubdirectories = $true
-            $watcher.EnableRaisingEvents = $false
-            $watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite -bor [System.IO.NotifyFilters]::FileName
-            $results = @()
-            $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bOr [System.IO.WatcherChangeTypes]::Created, 5000);
-            $results += $result
-            if ($result.TimedOut -eq $false) {
-                # wait for 1 second of inactivity
-                while ($true) {
-                    $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bOr [System.IO.WatcherChangeTypes]::Created, 1000);
-                    if ($result.TimedOut -eq $true) {
-                        break
-                    }
-                    else {
-                        $results += $result
+            try {
+                $watcher = New-Object System.IO.FileSystemWatcher
+                $watcher.Path = (Join-Path -Path $git_dir -ChildPath ".git\logs")
+                $watcher.IncludeSubdirectories = $true
+                $watcher.EnableRaisingEvents = $false
+                $watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite -bor [System.IO.NotifyFilters]::FileName
+                $results = @()
+                $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bOr [System.IO.WatcherChangeTypes]::Created, 60000);
+                $results += $result
+                if ($result.TimedOut -eq $false) {
+                    # wait for 1 second of inactivity
+                    while ($true) {
+                        $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bOr [System.IO.WatcherChangeTypes]::Created, 1000);
+                        if ($result.TimedOut -eq $true) {
+                            break
+                        }
+                        else {
+                            $results += $result
+                        }
                     }
                 }
+                return $results
+            } catch {
+                return $_.Exception | Format-List -Force | Out-String
             }
-            return $results
         }
-        "^/kill$" = { return }
+        "^/kill$" = { return "" }
     }
 
     $listener = New-Object System.Net.HttpListener
@@ -83,6 +111,18 @@ function Show-GitViz {
             continue
         }
 
+        <#
+        if ($localPath -eq "/svg") {
+            $content = ((Invoke-Expression -Command (Join-Path -Path $web_dir -ChildPath "graph.ps1")) | dot.exe -Tsvg) -join ""
+            $content = $content.Substring($content.IndexOf("<svg"))
+            $buffer = [System.Text.Encoding]::UTF8.GetBytes($content)
+            $response.ContentLength64 = $buffer.Length
+            $response.OutputStream.Write($buffer, 0, $buffer.Length)
+            $response.Close()
+            continue
+        }
+        #>
+
         $matched = $false
         foreach ($route_entry in $routes.GetEnumerator())
         {
@@ -106,16 +146,19 @@ function Show-GitViz {
         {
             $request_script = {
                 param($request, $response, $route, $params)
-                $content = & $route @params
-                if (-not ($content -is [string])) {
-                    $content = ($content | ConvertTo-Json)
-                    $response.ContentType = "application/json"
+                try {
+                    $content = & $route @params
+                    if (-not ($content -is [string])) {
+                        $content = ($content | ConvertTo-Json)
+                        $response.ContentType = "application/json"
+                    }
+                } catch {
+                    $content = $_.Exception | Format-List -Force | Out-String
                 }
                 $buffer = [System.Text.Encoding]::UTF8.GetBytes($content)
                 $response.ContentLength64 = $buffer.Length
                 $response.OutputStream.Write($buffer, 0, $buffer.Length)
                 $response.Close()
-                $responseStatus = $response.StatusCode
             }
             $request_task = [powershell]::Create().
                 AddScript($request_script).
