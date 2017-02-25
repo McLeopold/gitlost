@@ -13,6 +13,7 @@ function Show-GitViz {
 
     $routes = @{
         "^/$" = {
+            param([string[]]$parts, $data)
             try {
                 return Get-Content (Join-Path -Path $web_dir -ChildPath "graph.html") -raw
             } catch {
@@ -20,9 +21,10 @@ function Show-GitViz {
             }
         }
         "^/svg$" = {
+            param([string[]]$parts, $data)
             try {
                 $command = Join-Path -Path $web_dir -ChildPath "graph.ps1"
-                $dot = Invoke-Expression -Command $command
+                $dot = Invoke-Expression -Command "$command `"$data`""
                 $svg = $dot | dot.exe -Tsvg | Out-String
                 $svg = $svg.Substring([math]::max(0, $svg.IndexOf("<svg")))
                 return $svg
@@ -31,8 +33,9 @@ function Show-GitViz {
             }
         }
         "^/dot$" = {
+            param([string[]]$parts, $data)
             try {
-                $dot = (Invoke-Expression -Command (Join-Path -Path $web_dirr -ChildPath "graph.ps1"))
+                $dot = Invoke-Expression -Command (Join-Path -Path $web_dirr -ChildPath "graph.ps1") $data
                 return $dot
             } catch {
                 return $_.Exception | Format-List -Force | Out-String
@@ -40,23 +43,23 @@ function Show-GitViz {
 
         }
         "^/show/(.+)$" = {
-            param([string[]]$args)
+            param([string[]]$parts, $data)
             try {
-                return "<pre>$((git show $args) -join "`n")</pre>"
+                return "<pre>$((git show $parts[1]) -join "`n")</pre>"
             } catch {
                 return $_.Exception | Format-List -Force | Out-String
             }
         }
         "^/([^/]+\.(html|css|js))$" = {
-            param([string[]]$args)
+            param([string[]]$parts, $data)
             try {
-                return Get-Content (Join-Path -Path $web_dir -ChildPath $args[0]) -raw
+                return Get-Content (Join-Path -Path $web_dir -ChildPath $parts[1]) -raw
             } catch {
                 return $_.Exception | Format-List -Force | Out-String
             }
         }
         "^/watch$" = {
-            param([string[]]$args)
+            param([string[]]$parts, $data)
             try {
                 $watcher = New-Object System.IO.FileSystemWatcher
                 $watcher.Path = (Join-Path -Path $git_dir -ChildPath ".git\logs")
@@ -118,9 +121,9 @@ function Show-GitViz {
             if ($match.Success)
             {
                 $route = $route_entry.Value
-                $params = $match.Captures.Groups | %{ $_.Value }
+                $parts = $match.Captures.Groups | %{ $_.Value }
                 Write-Host "    matched $($route_entry.Key)"
-                Write-Host "    params $($params -join ", ")"
+                Write-Host "    parts $($parts -join ", ")"
                 break
             }
         }
@@ -132,10 +135,21 @@ function Show-GitViz {
         }
         else
         {
+            # get post data
+            $data = ""
+            if ($request.HasEntityBody) {
+                $body = $request.InputStream;
+                $encoding = $request.ContentEncoding;
+                $reader = New-Object System.IO.StreamReader($body, $encoding);
+                $data = $reader.ReadToEnd();
+                $body.Close();
+                $reader.Close();
+            }
+            # route task
             $request_script = {
-                param($request, $response, $route, $params)
+                param($request, $data, $response, $route, $parts)
                 try {
-                    $content = & $route @params
+                    $content = & $route $parts ($data -replace "`"", "```"")
                     if (-not ($content -is [string])) {
                         $content = ($content | ConvertTo-Json)
                         $response.ContentType = "application/json"
@@ -151,9 +165,10 @@ function Show-GitViz {
             $request_task = [powershell]::Create().
                 AddScript($request_script).
                 AddArgument($request).
+                AddArgument($data).
                 AddArgument($response).
                 AddArgument($route).
-                AddArgument($params)
+                AddArgument($parts)
             $request_task.RunspacePool = $RunspacePool
             $task_result = $request_task.BeginInvoke()
         }

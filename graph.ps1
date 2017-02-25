@@ -1,6 +1,8 @@
-﻿try {
+﻿param([string]$data)
+try {
+    $settings = $data | ConvertFrom-Json
     $graph ="digraph GitViz {`n"
-    $graph += "  graph [layout=dot rankdir=BT bgcolor=`"#ffffff`" title=`"Test`"]`n`n"
+    $graph += "  graph [layout=dot rankdir=$($settings.rankdir) bgcolor=`"#ffffff`" title=`"GitViz`"]`n`n"
 
     $graph += "  { node [shape=box style=`"rounded,filled`" fixedsize=true width=0.6 height=0.4 fontcolor=`"#ffffff`" fontname=Consolas fontsize=10]`n"
     $commits = git rev-list --all --no-merges --pretty=oneline
@@ -73,7 +75,7 @@
                         $labels += "<tr><td align=`"left`" valign=`"bottom`" href=`"show/$($ref)`" bgcolor=`"#ffffff`"><font color=`"$($color)`">$($ref.Substring(0, [math]::min(30, $ref.Length)))</font></td></tr>"
                     }
                 }
-                $graph += "    `"$($branch)`" [label=<<table border=`"0`" cellpadding=`"0px`" cellspacing=`"0px`">`n$($labels -join "`n")`n</table>> shape=none tooltip=`"$($branch)`" fixedsize=shape fontname=Calibri fontsize=10 width=0.5 height=0.25]`n"
+                $graph += "    `"$($branch)`" [label=<<table border=`"0`" cellpadding=`"0px`" cellspacing=`"0px`">`n$($labels -join "`n")`n</table>> shape=box color=`"#ffffff`" tooltip=`"$($branch)`" fontname=Calibri fontsize=10]`n"
                 $graph += "      `"$($branch_commit)`" -> `"$($branch)`"`n"
                 $graph += "    }`n`n"
                 $graph += "  subgraph `"cluster_$($branch)`" {`n"

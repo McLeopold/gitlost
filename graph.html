@@ -10,7 +10,23 @@
         <link rel="stylesheet" href="graph.css" />
     </head>
     <body>
-        <button id="close" href="/kill">[x] close</button>
+        <div class="widget">
+            <fieldset name="rankdir">
+                <legend>Rank Direction</legend>
+                <label for="rankdir-lr">&#x1f81a;&nbsp;LR</label>
+                <input type="radio" name="rankdir" id="rankdir-lr" value="LR">
+                <label for="rankdir-rl">&#x1f818;&nbsp;RL</label>
+                <input type="radio" name="rankdir" id="rankdir-rl" value="RL">
+                <label for="rankdir-bt">&#x1f819;&nbsp;BT</label>
+                <input type="radio" name="rankdir" id="rankdir-bt" value="BT">
+                <label for="rankdir-tb">&#x1f81b;&nbsp;TB</label>
+                <input type="radio" name="rankdir" id="rankdir-tb" value="TB">
+            </fieldset>
+            <fieldset name="controls">
+                <legend>Controls</legend>
+                <button id="close" class="ui-button ui-widget ui-corner-all" href="/kill">Close</button>
+            </fieldset>
+        </div>
         <div id="svg_div"></div>
     </body>
 </html>
