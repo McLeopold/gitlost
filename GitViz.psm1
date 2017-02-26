@@ -3,6 +3,13 @@ $web_dir = $PSScriptRoot
 
 function Show-GitViz {
     $git_dir = Get-Location
+
+    $watcher = New-Object System.IO.FileSystemWatcher
+    $watcher.Path = (Join-Path -Path $git_dir -ChildPath ".git\logs")
+    $watcher.IncludeSubdirectories = $true
+    $watcher.EnableRaisingEvents = $false
+    $watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite -bor [System.IO.NotifyFilters]::FileName
+
     $web_host = "http://localhost:6776/"
 
     Write-Host $git_dir
@@ -17,6 +24,7 @@ function Show-GitViz {
             try {
                 return Get-Content (Join-Path -Path $web_dir -ChildPath "graph.html") -raw
             } catch {
+                Add-Content (Join-Path -Path $web_dir -ChildPath "gitviz.log") ($_.Exception | Format-List -Force | Out-String)
                 return $_.Exception | Format-List -Force | Out-String
             }
         }
@@ -29,15 +37,18 @@ function Show-GitViz {
                 $svg = $svg.Substring([math]::max(0, $svg.IndexOf("<svg")))
                 return $svg
             } catch {
+                Add-Content (Join-Path -Path $web_dir -ChildPath "gitviz.log") ($_.Exception | Format-List -Force | Out-String)
                 return $_.Exception | Format-List -Force | Out-String
             }
         }
         "^/dot$" = {
             param([string[]]$parts, $data)
             try {
-                $dot = Invoke-Expression -Command (Join-Path -Path $web_dirr -ChildPath "graph.ps1") $data
+                $command = Join-Path -Path $web_dir -ChildPath "graph.ps1"
+                $dot = Invoke-Expression -Command "$command `"$data`""
                 return $dot
             } catch {
+                Add-Content (Join-Path -Path $web_dir -ChildPath "gitviz.log") ($_.Exception | Format-List -Force | Out-String)
                 return $_.Exception | Format-List -Force | Out-String
             }
 
@@ -47,6 +58,7 @@ function Show-GitViz {
             try {
                 return "<pre>$((git show $parts[1]) -join "`n")</pre>"
             } catch {
+                Add-Content (Join-Path -Path $web_dir -ChildPath "gitviz.log") ($_.Exception | Format-List -Force | Out-String)
                 return $_.Exception | Format-List -Force | Out-String
             }
         }
@@ -55,17 +67,13 @@ function Show-GitViz {
             try {
                 return Get-Content (Join-Path -Path $web_dir -ChildPath $parts[1]) -raw
             } catch {
+                Add-Content (Join-Path -Path $web_dir -ChildPath "gitviz.log") ($_.Exception | Format-List -Force | Out-String)
                 return $_.Exception | Format-List -Force | Out-String
             }
         }
         "^/watch$" = {
             param([string[]]$parts, $data)
             try {
-                $watcher = New-Object System.IO.FileSystemWatcher
-                $watcher.Path = (Join-Path -Path $git_dir -ChildPath ".git\logs")
-                $watcher.IncludeSubdirectories = $true
-                $watcher.EnableRaisingEvents = $false
-                $watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite -bor [System.IO.NotifyFilters]::FileName
                 $results = @()
                 $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::Changed -bor [System.IO.WatcherChangeTypes]::Renamed -bOr [System.IO.WatcherChangeTypes]::Created, 5000);
                 $results += $result
@@ -83,6 +91,7 @@ function Show-GitViz {
                 }
                 return $results
             } catch {
+                Add-Content (Join-Path -Path $web_dir -ChildPath "gitviz.log") ($_.Exception | Format-List -Force | Out-String)
                 return $_.Exception | Format-List -Force | Out-String
             }
         }
@@ -155,6 +164,7 @@ function Show-GitViz {
                         $response.ContentType = "application/json"
                     }
                 } catch {
+                    Add-Content (Join-Path -Path $web_dir -ChildPath "gitviz.log") ($_.Exception | Format-List -Force | Out-String)
                     $content = $_.Exception | Format-List -Force | Out-String
                 }
                 $buffer = [System.Text.Encoding]::UTF8.GetBytes($content)
@@ -172,7 +182,7 @@ function Show-GitViz {
             $request_task.RunspacePool = $RunspacePool
             $task_result = $request_task.BeginInvoke()
         }
-        Start-Sleep -Milliseconds 50
+        #Start-Sleep -Milliseconds 50
     }
     $RunspacePool.Close()
 }

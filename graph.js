@@ -56,21 +56,27 @@ $(function () {
             window.close();
         });
     });
+    var getting = false;
     function get_svg() {
-        $.ajax({
-            type: "POST",
-            url: "/svg",
-            data: JSON.stringify(settings),
-            contentType: 'application/json',
-        })
-        .done(function (svg) {
-            $("#svg_div").html(svg);
-            update_svg();
-            poll_git();
-        })
-        .fail(function () {
-            console.log(arguments);
-        });
+        if (!getting) {
+            getting = true;
+            $.ajax({
+                type: "POST",
+                url: "/svg",
+                data: JSON.stringify(settings),
+                contentType: 'application/json',
+            })
+            .done(function (svg) {
+                getting = false;
+                $("#svg_div").html(svg);
+                update_svg();
+                poll_git();
+            })
+            .fail(function () {
+                getting = false;
+                console.log(arguments);
+            });
+        }
     }
     var polling = false;
     function poll_git() {
@@ -84,10 +90,16 @@ $(function () {
                 polling = false;
                 if (result.TimedOut !== true) {
                     console.log(result);
-                    get_svg();
+                    if (!getting) {
+                        get_svg();
+                    }
                 } else {
-                    setTimeout(poll_git, 1000);
+                    setTimeout(poll_git, 1);
                 }
+            })
+            .fail(function () {
+                polling = false;
+                console.log(arguments);
             });
         }
     }
