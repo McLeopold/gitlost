@@ -1,8 +1,12 @@
 ﻿param([string]$data)
 try {
     $settings = $data | ConvertFrom-Json
+    $rankdir = "LR"
+    if ($settings.rankdir -ne $null) {
+        $rankdir = $settings.rankdir
+    }
     $graph ="digraph GitViz {`n"
-    $graph += "  graph [layout=dot rankdir=$($settings.rankdir) bgcolor=`"#ffffff`" title=`"GitViz`"]`n`n"
+    $graph += "  graph [layout=dot rankdir=$($rankdir) bgcolor=`"#ffffff`" title=`"GitViz`"]`n`n"
 
     $graph += "  { node [shape=box style=`"rounded,filled`" fixedsize=true width=0.6 height=0.4 fontcolor=`"#ffffff`" fontname=Consolas fontsize=10]`n"
     $commits = git rev-list --all --no-merges --pretty=oneline

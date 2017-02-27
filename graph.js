@@ -61,13 +61,17 @@ $(function () {
         if (!getting) {
             getting = true;
             $.ajax({
-                type: "POST",
-                url: "/svg",
-                data: JSON.stringify(settings),
+                type: "GET",
+                url: "/dot",
+                headers: {'gitviz-settings': JSON.stringify(settings)},
                 contentType: 'application/json',
             })
-            .done(function (svg) {
+            .done(function (dot) {                
                 getting = false;
+                var svg = Viz(dot, {
+                    format: 'svg',
+                    engine: 'dot'
+                });
                 $("#svg_div").html(svg);
                 update_svg();
                 poll_git();
