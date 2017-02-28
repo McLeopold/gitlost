@@ -2,6 +2,7 @@ var http = require('http');
 var child_process = require('child_process');
 var fs = require('fs');
 var path = require('path');
+var EventEmitter = require('events');
 
 var mimetypes = {
     'html': 'text/html',
@@ -9,6 +10,27 @@ var mimetypes = {
     'js': 'text/javascript'
 
 }
+
+class GitEmitter extends EventEmitter {}
+const gitEmitter = new GitEmitter();
+gitEmitter.on('error', function (err) {
+    console.log('gitEmitter: ' + err);
+})
+setInterval(function () {
+    gitEmitter.emit('git', 'heartbeat');
+}, 55000);
+var git_logs_watcher = fs.watch(path.join(process.cwd(), '.git', 'logs'), {recursive: true}, function (eventType, filename) {
+    if (filename) {
+        console.log(eventType, filename);
+        gitEmitter.emit('git', eventType, filename);
+    }
+})
+var git_refs_watcher = fs.watch(path.join(process.cwd(), '.git', 'refs'), {recursive: true}, function (eventType, filename) {
+    if (filename) {
+        console.log(eventType, filename);
+        gitEmitter.emit('git', eventType, filename);
+    }
+})
 
 var routes = [
     {
@@ -44,9 +66,24 @@ var routes = [
                     response.end();
                 }
                 response.statusCode = 200;
-                console.log(stdout);
+                //console.log(stdout);
                 response.write(stdout);
                 response.end();
+            });
+        }
+    }, {
+        regex: /\/watch$/,
+        method: ['GET'],
+        fn: function (request, response, parts) {
+            response.statusCode = 200;
+            response.setHeader('Content-Type', 'application/json');
+            gitEmitter.once('git', function (eventType, filename) {
+                if (eventType === 'heartbeat') {
+                    response.write('{"heartbeat": true}');
+                } else {
+                    response.write('{"filename": "' + (filename || "") + '"}')
+                }
+                response.end()
             })
         }
     }
@@ -95,3 +132,27 @@ server.on('request', function (request, response) {
 
 });
 server.listen(6776);
+
+function git(cmd) {
+  return new Promise(function (resolve, reject) {
+    child_process.exec('git ' + cmd, function (err, stdout, stderr) {
+        if (err) {
+            reject(err);
+        } else {
+            resolve(stdout);
+        }
+    });
+  });
+}
+function graph(settings) {
+    return new Promise(function (resolve, reject) {
+        git('log --oneline')
+        .then(function (data) {
+            console.log(data);
+            return git('reflog');
+        })
+        .then(function (data) {
+            console.log(data);
+        });
+    });
+}

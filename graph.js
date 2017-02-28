@@ -92,13 +92,13 @@ $(function () {
             })
             .done(function (result) {
                 polling = false;
-                if (result.TimedOut !== true) {
+                if (result.heartbeat) {
+                    setTimeout(poll_git, 1);
+                } else {
                     console.log(result);
                     if (!getting) {
-                        get_svg();
+                        setTimeout(get_svg, 1);
                     }
-                } else {
-                    setTimeout(poll_git, 1);
                 }
             })
             .fail(function () {
