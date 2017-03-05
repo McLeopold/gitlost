@@ -2,18 +2,21 @@
   "name": "gitviz",
   "version": "1.0.0",
   "description": "Git repository visualizer in the browser",
-  "main": "GitViz.js",
+  "main": "./lib/graph.js",
+  "bin": "./bin/gitviz.js",
   "dependencies": {
+    "md5": "^2.2.1",
+    "opn": "^4.0.2",
     "viz.js": "^1.7.0"
   },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "cp node_modules/viz.js/viz.js ."
+    "postinstall": "cp ./node_modules/viz.js/viz.js ./web"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/McLeopold/GitVizPosh.git"
+    "url": "git+https://github.com/McLeopold/gitviz.git"
   },
   "keywords": [
     "git",
@@ -23,7 +26,7 @@
   "author": "Scott Hamilton",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/McLeopold/GitVizPosh/issues"
+    "url": "https://github.com/McLeopold/gitviz/issues"
   },
-  "homepage": "https://github.com/McLeopold/GitVizPosh#readme"
+  "homepage": "https://github.com/McLeopold/gitviz#readme"
 }
