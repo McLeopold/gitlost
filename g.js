@@ -1,4 +1,5 @@
 var child_process = require('child_process');
+var md5 = require('md5');
 
 var carot = '^';
 if (process.platform === 'win32') {
@@ -15,7 +16,7 @@ if (process.platform === 'win32') {
  */
 var queue_cmd = (function () {
     var last_promise = Promise.resolve()
-    return function (cmd) {
+    return function (cmd, catch_error) {
         last_promise = last_promise.then(function () {
             return new Promise(function (resolve, reject) {
                 //console.log(cmd);
@@ -27,16 +28,16 @@ var queue_cmd = (function () {
                     }
                 });
             });
-        })
-        .catch(function (err) {
-            console.log(err);
-            last_promise = Promise.resolve();
         });
+        if (catch_error) {
+            last_promise = last_promise.catch(function (err) {
+            });
+        }
         return last_promise;
     }
 }());
 
-function hslToRgb(h, s, l){
+function hsl_to_rgb(h, s, l){
     var r, g, b;
 
     if(s == 0){
@@ -63,22 +64,13 @@ function hslToRgb(h, s, l){
 
 var color_hash = function(text) {
     text = text.match(/[^\/]+$/)[0];
-    var hash = 0;
-    function df(n) {
-        return ((n << 4) & 0x30) + ((n >> 2) & 0x0f)
-    }
-    for (var i = 0; i < text.length; i += 3) {
-        hash ^= ((df(text.charCodeAt(i  ) || 0) << 12) +
-                 (df(text.charCodeAt(i+1) || 0) <<  6) +
-                 (df(text.charCodeAt(i+2) || 0)))
-    }
-    var h = (hash >> 11) / 128;                // map [0,127] to ~[  0,   1)
-    var s = (((hash >> 5) & 0x3f) + 36) / 100; // map [0, 63] to  [.36, .99]
-    var l = ((hash & 0x1f) + 24) / 100;        // map [0, 31] to  [.24, .55]
-    rgb = hslToRgb(h, s, l);
+    hash = parseInt('0x' + md5(text).slice(-5));
+    var h = (((hash >> 9) & 0x1ff) ^ 0x109) / 512;      // map [0,127] to ~[  0,   1)
+    var s = ((((hash >> 5) & 0x3f) ^ 0x2f) + 36) / 100; // map [0, 63] to  [.36, .99]
+    var l = ((hash & 0x1f) + 24) / 100;                 // map [0, 31] to  [.24, .55]
+    rgb = hsl_to_rgb(h, s, l);
     rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2];
-    // mask to prevent pale colors and zero pad
-    console.log('/* ' + rgb.toString(16) + ' - ' + [h, s, l] + '*/')
+    //console.log('/* ' + hash.toString(16) + ' - ' + [h, s, l] + '*/')
     return '#' + ('000000' + rgb.toString(16)).slice(-6)
 };
 
@@ -143,8 +135,20 @@ function graph(settings) {
             });
         });
     })
-    .then(function (commits) {
-        vars.commits = commits;
+    .then(function (refs) {
+        vars.refs = refs;
+        return Promise.all([queue_cmd('git symbolic-ref --quiet HEAD', true), queue_cmd('git rev-parse HEAD')]);
+    })
+    .then(function (HEAD) {
+        vars.HEAD = HEAD;
+
+        if (!vars.HEAD[0]) {
+            vars.refs.push({
+                ref_name: 'HEAD',
+                ref_short: 'HEAD (detached)',
+                ref_commit: vars.HEAD[1]
+            });
+        }
 
         var commits_used = new Set();
 
@@ -182,14 +186,44 @@ function graph(settings) {
             dot += '\n' + dot_edges + '  }\n\n';
             //console.log(rev_list);
         })
-        vars.commits.forEach(function (commit) {
-            //console.log(commit);
+        var refs_used = new Set();
+        vars.refs.forEach(function (ref) {
+            if (settings.branches.indexOf(ref.ref_short) >= 0) {
+                //console.log(commit);
+                var labels = [];
+                vars.refs.forEach(function (ref2) {
+                    if (!refs_used.has(ref2.ref_name) && ref2.ref_commit === ref.ref_commit) {
+                        var color = '#808080';
+                        if (ref2.ref_name.startsWith('refs/heads/')) color = '#60c060';
+                        else if (ref2.ref_name.startsWith('refs/remotes/')) color = '#c06060';
+                        else if (ref2.ref_name.startsWith('refs/tags/')) color = '#c0c060';
+                        else if (ref2.ref_name === 'HEAD') color = '#60c0c0';
+                        if (ref2.ref_name === vars.HEAD[0]) {
+                            labels.push('      <tr><td align="left" valign="bottom" href="show/' + ref2.ref_short + '" bgcolor="#ffffff"><font color="#60c0c0">HEAD -&gt; </font><font color="' + color + '">' + ref2.ref_short + '</font></td></tr>\n');
+                        } else {
+                            labels.push('      <tr><td align="left" valign="bottom" href="show/' + ref2.ref_short + '" bgcolor="#ffffff"><font color="' + color + '">' + ref2.ref_short + '</font></td></tr>\n');
+                        }
+                        refs_used.add(ref2.ref_name);
+                    }
+                });
+                if (labels.length > 0) {
+                    dot += '  subgraph "' + ref.ref_short + '" {\n';
+                    dot += '    color="#ffffff";\n';
+                    dot += '    edge [color="#c0c0c0" arrowhead=none penwidth=2]\n\n';
+                    dot += '    "' + ref.ref_short + '" [label=<<table border="0" cellpadding="0px" cellspacing="0px">\n';
+                    dot += labels.join('');
+                    dot += '      </table>> shape=box fixedsize=false color="#ffffff" tooltip="' + ref.ref_short + '" fontname=Calibri fontsize=10]\n\n';
+                    dot += '    "' + ref.ref_commit + '" -> "' + ref.ref_short + '"\n';
+                    dot += '  }\n\n';
+                }
+            }
         })
 
         dot += '}\n';
         return dot;
     })
     .catch(function (err) {
+        console.log('graph failed');
         console.log(err);
     });
 }
@@ -200,7 +234,8 @@ graph({
         'origin/master',
         'nodejs',
         'justin',
-        'controls'
+        'controls',
+        'deploy'
     ]
 }).then(function (dot) {
     console.log(dot);
