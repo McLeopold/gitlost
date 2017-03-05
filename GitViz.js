@@ -3,6 +3,7 @@ var child_process = require('child_process');
 var fs = require('fs');
 var path = require('path');
 var EventEmitter = require('events');
+var gitviz = require('./g');
 
 var mimetypes = {
     'html': 'text/html',
@@ -32,6 +33,8 @@ var git_refs_watcher = fs.watch(path.join(process.cwd(), '.git', 'refs'), {recur
     }
 })
 
+var server = http.createServer();
+
 var routes = [
     {
         regex: /^\/$/,
@@ -56,20 +59,36 @@ var routes = [
         method: ['GET'],
         fn: function (request, response, parts) {
             response.setHeader('Content-Type', 'text/plain');
-            var settings = request.headers['gitviz-settings'] || '{"rankdir":"LR"}';
-            var cmd = 'powershell.exe ' + path.join(__dirname, 'graph.ps1') + ' "' + settings.replace(/"/g, '`\\"').replace(/\{/g, '`{').replace(/\}/g, '`}') + '"';
-            console.log(cmd);
-            child_process.exec(cmd, function (err, stdout, stderr) {
-                if (err) {
-                    console.log(err);
-                    response.statusCode = 500;
-                    response.end();
-                }
+            var settings = JSON.parse(request.headers['gitviz-settings'] || '{"rankdir":"LR"}');
+            gitviz.graph(settings)
+            .then(function (dot) {
                 response.statusCode = 200;
-                //console.log(stdout);
-                response.write(stdout);
+                response.setHeader('Content-Type', 'text/plain');
+                response.write(dot);
+                response.end();
+            })
+            .catch(function (err) {
+                console.log(err);
+                response.statusCode = 500;
                 response.end();
             });
+        }
+    }, {
+        regex: /\/show\/(.+)/,
+        method: ['GET'],
+        fn: function (request, response, parts) {
+            gitviz.queue_cmd('git show ' + parts[1])
+            .then(function (output) {
+                response.statusCode = 200;
+                response.setHeader('Content-Type', 'text/plain');
+                response.write(output);
+                response.end();
+            })
+            .catch(function (err) {
+                console.log(err);
+                response.statusCode = 500;
+                response.end();
+            })
         }
     }, {
         regex: /\/watch$/,
@@ -78,13 +97,26 @@ var routes = [
             response.statusCode = 200;
             response.setHeader('Content-Type', 'application/json');
             gitEmitter.once('git', function (eventType, filename) {
-                if (eventType === 'heartbeat') {
+                if (eventType === 'close') {
+                    response.write('{"close": true}');
+                } else if (eventType === 'heartbeat') {
                     response.write('{"heartbeat": true}');
                 } else {
                     response.write('{"filename": "' + (filename || "") + '"}')
                 }
                 response.end()
             })
+        }
+    }, {
+        regex: /\/close$/,
+        method: ['PUT'],
+        fn: function (request, response, parts) {
+            gitEmitter.emit('git', 'close');
+            response.end();
+            server.close();
+            setTimeout(function () {
+                process.exit(0);
+            }, 500);
         }
     }
 ];
@@ -101,7 +133,6 @@ function get_route(request) {
     }
 }
 
-var server = http.createServer();
 server.on('request', function (request, response) {
     console.log(request.url);
     var route_data = get_route(request);

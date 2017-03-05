@@ -49,8 +49,8 @@ $(function () {
     $("#close").click(function (event) {
         event.preventDefault();
         $.ajax({
-            type: "GET",
-            url: "/kill"
+            type: "PUT",
+            url: "/close"
         })
         .done(function (response) {
             window.close();
@@ -92,7 +92,8 @@ $(function () {
             })
             .done(function (result) {
                 polling = false;
-                if (result.heartbeat) {
+                if (result.close) {
+                } else if (result.heartbeat) {
                     setTimeout(poll_git, 1);
                 } else {
                     console.log(result);

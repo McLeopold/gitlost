@@ -171,7 +171,7 @@ function graph(settings) {
         var commits_used = new Set();
 
         var dot = 'digraph GitViz {\n';
-        dot += '  graph [layout=dot rankdir=RL bgcolor="#ffffff" title="GitViz"]\n';
+        dot += '  graph [layout=dot rankdir=' + settings.rankdir + ' bgcolor="#ffffff" title="GitViz"]\n';
         dot += '  node [shape=box style="rounded,filled" fixedsize=true width=0.6 height=0.4 fontcolor="#ffffff" fontname=Consolas fontsize=10]\n';
         dot += '  edge [penwidth=4 arrowhead=normal arrowsize=0.1 color="#808080"]\n\n';
 
@@ -250,4 +250,7 @@ function graph(settings) {
     });
 }
 
-module.exports = graph;
+module.exports = {
+    graph: graph,
+    queue_cmd: queue_cmd
+};
