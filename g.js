@@ -19,7 +19,7 @@ var queue_cmd = (function () {
     return function (cmd, catch_error) {
         last_promise = last_promise.then(function () {
             return new Promise(function (resolve, reject) {
-                //console.log(cmd);
+                console.log('/* ' + cmd + ' */');
                 child_process.exec(cmd, function (err, stdout, stderr) {
                     if (err) {
                         reject(err);
@@ -79,16 +79,34 @@ var color_hash = function(text) {
 // nested thens are for logical clarity
 function graph(settings) {
     settings.branches = settings.branches || ['master'];
+    if (settings.include_forward === undefined) settings.include_forward = true;
     settings.rankdir = settings.rankdir || 'LR';
     var vars = {
         dot: ''
     };
     // get earliest commit in common to all selected branches
     return queue_cmd('git merge-base --octopus ' + settings.branches.join(' '))
-    // get commit list reachable from each branch until merge base parent
-    // get parents and commit message title and create objects
+    // maybe expand list of branches
     .then(function (base_commit) {
         vars.base_commit = base_commit.replace('\n', '');
+        if (settings.include_forward) {
+            return queue_cmd('git for-each-ref --contains ' + base_commit + ' --format="%(refname:short)"')
+            .then(function (branches) {
+                branches.split('\n').forEach(function (branch) {
+                    if (settings.branches.indexOf(branch) === -1) {
+                        settings.branches.push(branch);
+                    }
+                });
+                return settings.branches;
+            })
+        } else {
+            return settings.branches;
+        }
+    })
+    // get commit list reachable from each branch until merge base parent
+    // get parents and commit message title and create objects
+    .then(function (branches) {
+        settings.branches = branches;
         var rev_list_cmds = settings.branches.map(function (branch) {
             return queue_cmd('git rev-list --parents --pretty=oneline ' + branch + ' ' + carot + vars.base_commit + carot)
             .then(function (rev_list) {
@@ -165,6 +183,7 @@ function graph(settings) {
             dot += '    color="#ffffff";\n';
             dot += '    node [color="' + color + '"]\n';
             dot += '    edge [color="' + color + '"]\n';
+            var last_parent_length = 1;
             rev_list.commits.forEach(function (commit_info, index) {
                 if (!commits_used.has(commit_info.commit)) {
                     dot += ('    "' + 
@@ -174,14 +193,17 @@ function graph(settings) {
                             commit_info.commit + '" tooltip="' + 
                             commit_info.title + '"]\n');
                     commits_used.add(commit_info.commit);
-                    if (index < rev_list.commits.length - 1) {
+                    // don't create edge from last commit parent since it is off the graph
+                    // use the parent count in case the last commit on the graph is a merge with 2 or more parents
+                    if (index < rev_list.commits.length - last_parent_length) {
                         commit_info.parents.forEach(function (parent) {
                             dot_edges += ('    "' +
                                     parent + '" -> "' +
                                     commit_info.commit + '"\n');
                         });
-                    };
+                    }
                 }
+                last_parent_length = commit_info.parents.length;
             });
             dot += '\n' + dot_edges + '  }\n\n';
             //console.log(rev_list);
@@ -228,15 +250,4 @@ function graph(settings) {
     });
 }
 
-graph({
-    branches: [
-        'master',
-        'origin/master',
-        'nodejs',
-        'justin',
-        'controls',
-        'deploy'
-    ]
-}).then(function (dot) {
-    console.log(dot);
-})
+module.exports = graph;
