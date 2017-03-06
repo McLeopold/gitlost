@@ -1,9 +1,9 @@
 {
-  "name": "gitviz",
+  "name": "gitlost",
   "version": "1.0.0",
-  "description": "Git repository visualizer in the browser",
+  "description": "Git repository graph visualizer and manipulator in the browser",
   "main": "./lib/graph.js",
-  "bin": "./bin/gitviz.js",
+  "bin": "./bin/gitlost.js",
   "dependencies": {
     "md5": "^2.2.1",
     "opn": "^4.0.2",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/McLeopold/gitviz.git"
+    "url": "git+https://github.com/McLeopold/gitlost.git"
   },
   "keywords": [
     "git",
@@ -26,7 +26,7 @@
   "author": "Scott Hamilton",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/McLeopold/gitviz/issues"
+    "url": "https://github.com/McLeopold/gitlost/issues"
   },
-  "homepage": "https://github.com/McLeopold/gitviz#readme"
+  "homepage": "https://github.com/McLeopold/gitlost#readme"
 }

@@ -63,7 +63,7 @@ $(function () {
             $.ajax({
                 type: "GET",
                 url: "/dot",
-                headers: {'gitviz-settings': JSON.stringify(settings)},
+                headers: {'gitlost-settings': JSON.stringify(settings)},
                 contentType: 'application/json',
             })
             .done(function (dot) {                
