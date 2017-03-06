@@ -56,6 +56,33 @@ $(function () {
             window.close();
         });
     });
+    function get_refs() {
+        $.ajax({
+            type: 'GET',
+            url: '/refs',
+            contentType: 'application/json'
+        })
+        .done(function (refs) {
+            var refs_fieldset = $('fieldset[name=refs]');
+            refs_fieldset.find('label').remove();
+            refs.forEach(function (ref) {
+                refs_fieldset.append($('<label for="ref-' + ref.ref_short + '">' + ref.ref_short +
+                    '<input type="checkbox" name="refs" id="ref-' + ref.ref_short + '" value="' + ref.ref_short + '" /></label>'))
+            });
+            refs_fieldset.find('input[type=checkbox]')
+                .checkboxradio()
+                .click(function () {
+                    set('branches', $('input[name=refs]:checked').map(function () { return this.value; }).get());
+                    get_svg();
+                });
+            refs_fieldset.controlgroup({
+                "direction": "vertical"
+            });
+        })
+        .fail(function () {
+            console.log(arguments);
+        })
+    }
     var getting = false;
     function get_svg() {
         if (!getting) {
@@ -108,5 +135,6 @@ $(function () {
             });
         }
     }
+    get_refs();
     get_svg();
 });
