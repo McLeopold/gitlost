@@ -1,28 +1,27 @@
 $(function () {
     // Configure UI
     $( "input[name=rankdir]")
-        .checkboxradio({
-            icon: false
-        })
         .click(function () {
             set('rankdir', $(this).val());
-            get_svg();
+            get_graph();
         });
-    $("fieldset[name=rankdir]").controlgroup();
-    $('fieldset[name=controls]').controlgroup();
     // Load saved settings
     var settings = JSON.parse(localStorage.getItem('settings')) || {};
     if (settings.rankdir) {
         $("input[name=rankdir][value=" + settings.rankdir + "]")
             .prop('checked', true);
-        $("fieldset[name=rankdir]").controlgroup('refresh');
     }
     function set(key, value) {
         settings[key] = value;
         localStorage.setItem('settings', JSON.stringify(settings));
     }
     // API functions
-    function update_svg() {
+    function update_graph(dot) {
+        var svg = Viz(dot, {
+            format: 'svg',
+            engine: 'dot'
+        });
+        $("#svg_div").html(svg);
         $('a')
         .each(function () {
             var that = $(this);
@@ -37,12 +36,7 @@ $(function () {
                 url: that.data('href')
             })
             .done(function (output) {
-                $('<div><pre>' + output + '</pre></div>').dialog({
-                    title: that.data('href'),
-                    height: 600,
-                    width: 800
-                });
-                //console.log(output);
+                $('#show').html('<pre>' + output + '</pre>');
             })
         });
     }
@@ -56,68 +50,80 @@ $(function () {
             window.close();
         });
     });
-    function get_refs() {
-        $.ajax({
-            type: 'GET',
-            url: '/refs',
-            contentType: 'application/json'
-        })
-        .done(function (refs) {
-            var refs_fieldset = $('fieldset[name=refs]');
-            refs_fieldset.find('label').remove();
-            refs.forEach(function (ref) {
-                refs_fieldset.append($('<label for="ref-' + ref.ref_short + '">' + ref.ref_short +
-                    '<input type="checkbox" name="refs" id="ref-' + ref.ref_short + '" value="' + ref.ref_short + '" /></label>'))
+    function update_refs(refs) {
+        var refs_fieldset = $('fieldset[name=refs]');
+        refs_fieldset.find('label').remove();
+        refs.forEach(function (ref) {
+            refs_fieldset.append($('<label for="ref-' + ref.ref_short + '">' + ref.ref_short +
+                '<input type="checkbox" name="refs" id="ref-' + ref.ref_short + '" value="' + ref.ref_short + '" /></label>'))
+        });
+        refs_fieldset.find('input[type=checkbox]')
+            .click(function () {
+                set('branches', $('input[name=refs]:checked').map(function () { return this.value; }).get());
+                get_graph();
             });
-            refs_fieldset.find('input[type=checkbox]')
-                .checkboxradio()
-                .click(function () {
-                    set('branches', $('input[name=refs]:checked').map(function () { return this.value; }).get());
-                    get_svg();
-                });
-            refs_fieldset.controlgroup({
-                "direction": "vertical"
-            });
-        })
-        .fail(function () {
-            console.log(arguments);
-        })
     }
-    var getting = false;
-    function get_svg() {
-        if (!getting) {
-            getting = true;
-            $.ajax({
-                type: "GET",
-                url: "/dot",
-                headers: {'gitlost-settings': JSON.stringify(settings)},
-                contentType: 'application/json',
+    /*
+     * Prevent multiple ajax requests from firing
+     * Allow at most one request to queue up due to changed data
+     * Fire off next request with current data
+     * Shut off polling when requesting graph update
+     */
+    var graph_queued = false;
+    var graph_promise = null;
+    var polling = null;
+    function get_graph() {
+        if (polling !== null) {
+            polling.abort();
+        }
+        if (graph_promise === null) {
+            // Inital request
+            graph_promise = Promise.all([
+                $.ajax({
+                    type: 'GET',
+                    url: '/refs',
+                    contentType: 'application/json'
+                }),
+                $.ajax({
+                    type: "GET",
+                    url: "/dot",
+                    headers: {'gitlost-settings': JSON.stringify(settings)},
+                    contentType: 'application/json',
+                })
+            ])
+            .then(function (info) {
+                graph_promise = null;
+                update_refs(info[0]);
+                update_graph(info[1]);
+                if (graph_queued === false) {
+                    poll_git();
+                }
             })
-            .done(function (dot) {                
-                getting = false;
-                var svg = Viz(dot, {
-                    format: 'svg',
-                    engine: 'dot'
-                });
-                $("#svg_div").html(svg);
-                update_svg();
-                poll_git();
-            })
-            .fail(function () {
-                getting = false;
-                console.log(arguments);
+            .catch(function (err) {
+                graph_promise = null;
+                console.log(err);
             });
+            return graph_promise;
+        } else if (graph_queued === false) {
+            // Queue one additional request
+            graph_queued = true;
+            graph_promise = graph_promise.then(function () {
+                graph_queued = false;
+                graph_promise = get_graph();
+                return graph_promise;
+            });
+        } else {
+            // Prevent multiple requests from queueing
+            return graph_promise;
         }
     }
-    var polling = false;
     function poll_git() {
-        if (!polling) {
-            polling = true;
-            $.ajax({
+        if (polling === null) {
+            polling = $.ajax({
                 type: "GET",
                 url: "/watch"
             })
-            .done(function (result) {
+            .then(function (result) {
                 polling = false;
                 if (result.close) {
                 } else if (result.heartbeat) {
@@ -125,16 +131,16 @@ $(function () {
                 } else {
                     console.log(result);
                     if (!getting) {
-                        setTimeout(get_svg, 1);
+                        setTimeout(get_graph, 1);
                     }
                 }
             })
-            .fail(function () {
+            .catch(function (err) {
                 polling = false;
-                console.log(arguments);
+                console.log(err);
             });
         }
     }
-    get_refs();
-    get_svg();
+    // startup
+    get_graph();
 });

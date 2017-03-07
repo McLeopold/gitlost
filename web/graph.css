@@ -1,14 +1,3 @@
 body {
     font-family: Consolas, monospace;
 }
-
-#toolbar {
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    right: 0px;
-}
-
-#toolbar fieldset {
-    vertical-align: top;
-}
