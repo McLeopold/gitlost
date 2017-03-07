@@ -50,18 +50,18 @@ $(function () {
             window.close();
         });
     });
-    function update_refs(refs) {
-        var refs_fieldset = $('fieldset[name=refs]');
-        refs_fieldset.find('label').remove();
-        refs.forEach(function (ref) {
-            refs_fieldset.append($('<label for="ref-' + ref.ref_short + '">' + ref.ref_short +
-                '<input type="checkbox" name="refs" id="ref-' + ref.ref_short + '" value="' + ref.ref_short + '" /></label>'))
+    $('select[name=refs]')
+        .selectpicker({actionsBox: true})
+        .on('hide.bs.select', function () {
+            set('branches', $('select[name=refs]').val());
         });
-        refs_fieldset.find('input[type=checkbox]')
-            .click(function () {
-                set('branches', $('input[name=refs]:checked').map(function () { return this.value; }).get());
-                get_graph();
-            });
+    function update_refs(refs) {
+        var refs_select = $('select[name=refs]');
+        refs_select.find('option').remove();
+        refs.forEach(function (ref) {
+            refs_select.append($('<option>' + ref.ref_short + '</option>'));
+        });
+        setTimeout(function () { refs_select.selectpicker('refresh'); }, 1);
     }
     /*
      * Prevent multiple ajax requests from firing
