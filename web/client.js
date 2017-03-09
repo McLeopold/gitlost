@@ -37,7 +37,10 @@ $(function () {
                 url: that.data('href')
             })
             .done(function (output) {
-                $('#show').html('<pre>' + output + '</pre>');
+                BootstrapDialog.show({
+                    title: that.data('href').slice(5),
+                    message: output
+                });
             })
         });
     }
