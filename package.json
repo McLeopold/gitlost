@@ -5,8 +5,10 @@
   "main": "./lib/graph.js",
   "bin": "./bin/gitlost.js",
   "dependencies": {
+    "bootstrap3-dialog": "^1.35.3",
     "md5": "^2.2.1",
     "opn": "^4.0.2",
+    "sortablejs": "^1.5.1",
     "viz.js": "^1.7.0"
   },
   "devDependencies": {},

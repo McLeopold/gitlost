@@ -1,28 +1,35 @@
 $(function () {
+    var settings;
     // Configure UI
-    $( "input[name=rankdir]")
+    $( "button[name=rankdir]")
         .click(function () {
-            set('rankdir', $(this).val());
+            settings.set('rankdir', $(this).val());
             get_graph();
         });
     // Load saved settings
-    var settings = JSON.parse(localStorage.getItem('settings')) || {};
+    function Settings(repo_path) {
+        this.repo_path = repo_path;
+        this.settings = JSON.parse(localStorage.getItem(this.repo_path) || '{}');
+    }
+    Settings.prototype.set = function(key, value) {
+        this.settings[key] = value;
+        localStorage.setItem(this.repo_path, JSON.stringify(this.settings));
+    }
+    /*
     if (settings.rankdir) {
         $("input[name=rankdir][value=" + settings.rankdir + "]")
             .prop('checked', true);
     }
-    function set(key, value) {
-        settings[key] = value;
-        localStorage.setItem('settings', JSON.stringify(settings));
-    }
+    */
     // API functions
     function update_graph(dot) {
         var svg = Viz(dot, {
             format: 'svg',
             engine: 'dot'
         });
-        $("#svg_div").html(svg);
-        $('a')
+        $("#svg_div")
+        .html(svg)
+        .find('a')
         .each(function () {
             var that = $(this);
             that.data('href', that.attr('xlink:href'));
@@ -50,18 +57,60 @@ $(function () {
             window.close();
         });
     });
+    var refs_select;    
+    var refs_sortable;
     $('select[name=refs]')
         .selectpicker({actionsBox: true})
         .on('hide.bs.select', function () {
-            set('branches', $('select[name=refs]').val());
+            var selected = refs_select.val();
+            settings.set('branches', refs_sortable.toArray().filter(function (item) {
+                return selected.indexOf(item) >= 0;
+            }));
+            // update after select close
+            setTimeout(get_graph(),1);
         });
     function update_refs(refs) {
-        var refs_select = $('select[name=refs]');
+        var refs_selected = settings.settings.branches || [];
+        refs_select = $('select[name=refs]');
         refs_select.find('option').remove();
+        refs_selected.forEach(function (ref_short) {
+            if (refs.some(function (ref) {
+                return ref.ref_short === ref_short;
+            })) {
+                refs_select.append($('<option>' + ref_short + '</option>'));
+            }
+        })
         refs.forEach(function (ref) {
-            refs_select.append($('<option>' + ref.ref_short + '</option>'));
+            if (refs_selected.indexOf(ref.ref_short) === -1) {
+                refs_select.append($('<option>' + ref.ref_short + '</option>'));
+            }
         });
-        setTimeout(function () { refs_select.selectpicker('refresh'); }, 1);
+        refs_select.selectpicker('refresh');
+        var refs_ul = $('ul[role=listbox]');
+        refs_ul.find('li').each(function (idx, item) {
+            $(item).attr('data-id', $(item).find('span.text').text());
+        })
+        if (refs_sortable) refs_sortable.destroy();
+        refs_sortable = Sortable.create(refs_ul.get(0), {
+            store: {
+                get: function (sortable) {
+                    var sorted = refs_selected.slice(0);
+                    refs.forEach(function (ref) {
+                        if (sorted.indexOf(ref.ref_short) === -1) {
+                            sorted.push(ref.ref_short);
+                        }
+                    });
+                    return sorted;
+                },
+                set: function (sortable) {
+                    var selected = refs_select.val();
+                    settings.set('branches', sortable.toArray().filter(function (item) {
+                        return selected.indexOf(item) >= 0;
+                    }));
+                }
+            }
+        })
+        refs_select.selectpicker('val', refs_selected);
     }
     /*
      * Prevent multiple ajax requests from firing
@@ -74,28 +123,33 @@ $(function () {
     var polling = null;
     function get_graph() {
         if (polling !== null) {
-            polling.abort();
+            //polling.abort();
         }
         if (graph_promise === null) {
             // Inital request
-            graph_promise = Promise.all([
-                $.ajax({
-                    type: 'GET',
-                    url: '/refs',
-                    contentType: 'application/json'
-                }),
-                $.ajax({
+            graph_promise = $.ajax({
+                type: 'GET',
+                url: '/refs',
+                contentType: 'application/json'
+            })
+            .then(function (repo) {
+                settings = new Settings(repo.repo_path);
+                if (settings.settings.rankdir) {
+                    $('button[name=rankdir][value=' + settings.settings.rankdir + ']').button('toggle');
+                }
+                $('span.navbar-brand').text(repo.repo_path);
+                update_refs(repo.refs);
+                return $.ajax({
                     type: "GET",
                     url: "/dot",
-                    headers: {'gitlost-settings': JSON.stringify(settings)},
+                    headers: {'gitlost-settings': JSON.stringify(settings.settings)},
                     contentType: 'application/json',
                 })
-            ])
-            .then(function (info) {
-                graph_promise = null;
-                update_refs(info[0]);
-                update_graph(info[1]);
+            })
+            .then(function (dot) {
+                update_graph(dot);
                 if (graph_queued === false) {
+                    graph_promise = null;
                     poll_git();
                 }
             })
@@ -109,6 +163,7 @@ $(function () {
             graph_queued = true;
             graph_promise = graph_promise.then(function () {
                 graph_queued = false;
+                graph_promise = null;
                 graph_promise = get_graph();
                 return graph_promise;
             });
@@ -124,7 +179,7 @@ $(function () {
                 url: "/watch"
             })
             .then(function (result) {
-                polling = false;
+                polling = null;
                 if (result.close) {
                 } else if (result.heartbeat) {
                     setTimeout(poll_git, 1);
@@ -136,7 +191,7 @@ $(function () {
                 }
             })
             .catch(function (err) {
-                polling = false;
+                polling = null;
                 console.log(err);
             });
         }

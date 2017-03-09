@@ -3,13 +3,16 @@
     <head>
         <meta charset="utf-8" />
         <title>GitLost</title>
-        <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>        <script src="viz.js"></script>
+        <script src="https://code.jquery.com/jquery-3.1.1.js" integrity="sha256-16cdPddA6VdVInumRGo6IbivbERE8p7CQR3HzTBuELA=" crossorigin="anonymous"></script>
+        <!--<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>-->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
+        <script src="Sortable.js"></script>
+        <script src="viz.js"></script>
         <script src="client.js"></script>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
         <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">-->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.css">
         <link rel="stylesheet" href="graph.css" />
     </head>
     <body>
@@ -22,10 +25,10 @@
                 <div id="navbar" class="navbar">
                     <ul class="nav navbar-nav">
                         <div class="btn-group" role="group" aria-label="...">
-                            <button type="button" class="btn btn-default">&#x1f81a;&nbsp;LR</button>
-                            <button type="button" class="btn btn-default">&#x1f818;&nbsp;RL</button>
-                            <button type="button" class="btn btn-default">&#x1f819;&nbsp;BT</button>
-                            <button type="button" class="btn btn-default">&#x1f81b;&nbsp;TB</button>
+                            <button name="rankdir" value="LR" type="button" class="btn btn-default">&#x1f81a;&nbsp;LR</button>
+                            <button name="rankdir" value="RL" type="button" class="btn btn-default">&#x1f818;&nbsp;RL</button>
+                            <button name="rankdir" value="BT" type="button" class="btn btn-default">&#x1f819;&nbsp;BT</button>
+                            <button name="rankdir" value="TB" type="button" class="btn btn-default">&#x1f81b;&nbsp;TB</button>
                         </div>
                         <select name="refs" class="selectpicker" multiple>
                         </select>
