@@ -15,12 +15,6 @@ $(function () {
         this.settings[key] = value;
         localStorage.setItem(this.repo_path, JSON.stringify(this.settings));
     }
-    /*
-    if (settings.rankdir) {
-        $("input[name=rankdir][value=" + settings.rankdir + "]")
-            .prop('checked', true);
-    }
-    */
     // API functions
     function update_graph(dot) {
         var svg = Viz(dot, {
