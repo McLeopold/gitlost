@@ -39,7 +39,7 @@ $(function () {
             .done(function (output) {
                 BootstrapDialog.show({
                     title: that.data('href').slice(5),
-                    message: output
+                    message: '<pre>' + output + '</pre>'
                 });
             })
         });
@@ -182,9 +182,7 @@ $(function () {
                     setTimeout(poll_git, 1);
                 } else {
                     console.log(result);
-                    if (!getting) {
-                        setTimeout(get_graph, 1);
-                    }
+                    setTimeout(get_graph, 1);
                 }
             })
             .catch(function (err) {
