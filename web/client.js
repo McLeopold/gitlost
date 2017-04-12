@@ -1,11 +1,16 @@
 $(function () {
-    var settings;
+    settings = {};
     // Configure UI
     $( "button[name=rankdir]")
         .click(function () {
             settings.set('rankdir', $(this).val());
             get_graph();
         });
+    $("button[name=include_forward")
+        .click(function () {
+            settings.set('include_forward', !$(this).hasClass('active'));
+            get_graph();
+        })
     // Load saved settings
     function Settings(repo_path) {
         this.repo_path = repo_path;
@@ -133,6 +138,9 @@ $(function () {
                 settings = new Settings(repo.repo_path);
                 if (settings.settings.rankdir) {
                     $('button[name=rankdir][value=' + settings.settings.rankdir + ']').button('toggle');
+                }
+                if (settings.settings.include_forward) {
+                    $('button[name=include_forward]').addClass('active').attr('aria-pressed', 'true');
                 }
                 $('span.navbar-brand').text(repo.repo_path);
                 update_refs(repo.refs);
