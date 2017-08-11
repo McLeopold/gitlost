@@ -15,6 +15,7 @@ $(function () {
     function Settings(repo_path) {
         this.repo_path = repo_path;
         this.settings = JSON.parse(localStorage.getItem(this.repo_path) || '{}');
+        if (settings.include_forward === undefined) settings.include_forward = false;
     }
     Settings.prototype.set = function(key, value) {
         this.settings[key] = value;
