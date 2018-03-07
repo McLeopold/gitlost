@@ -47,9 +47,20 @@ $(function () {
                             url: that.data('href')
                         })
                         .done(function (output) {
+                            var outputArray = JSON.parse(output);
                             BootstrapDialog.show({
                                 title: that.data('href').slice(5),
                                 message: '<pre>' + output + '</pre>'
+                    +          '<div class="tab-content">'
+                    +               '<div class="tab-pane active" id="details">'
+                    +                   '<br/><pre>' + outputArray[2] + '</pre>'
+                    +               '</div>'
+                    +               '<div class="tab-pane" id="status">'
+                    +                   '<br/><pre>' + outputArray[1] + '</pre>'
+                    +               '</div>'
+                    //+               '<div class="tab-pane" id="diff">'
+                    //+              '</div> '
+                    +           '</div>'
                             });
                         })
                     });
