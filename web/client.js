@@ -27,7 +27,11 @@ $(function () {
             .select("#graph")
             .graphviz()
             .renderDot(dot, function() {
-                $("#graph")
+                var $graph = $("#graph");
+                $graph
+                    .children('svg')
+                    .height('100%');
+                $graph
                     .find('a')
                     .each(function () {
                         var that = $(this);
