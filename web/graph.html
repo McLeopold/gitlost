@@ -21,6 +21,13 @@
         <link rel="stylesheet" href="graph.css" />
     </head>
     <body>
+        <button class="btn btn-default" data-toggle="collapse" data-target="#branchesbar">Branches</button>
+        <div class="row">
+            <div id="branchesbar" class="collapse col-xs-4 pull-left">
+                <ul name="branchtree" class="list-group">
+                </ul>
+            </div>
+        </div>
 
         <nav class="navbar navbar-default navbar-fixed-top">
             <div class="container">
@@ -53,8 +60,7 @@
                         <button type="button" class="btn btn-default" id="close">Close</button>
                     </ul>
                 </div>
-            </div>
-        </nav>
+            </nav>
 
         <!-- <div id="svg_div"></div> -->
         <div id="graph" style="text-align: center; height: 100%;"></div>
