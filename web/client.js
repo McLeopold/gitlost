@@ -46,16 +46,16 @@ $(function () {
                     var outputArray = JSON.parse(output);
                 BootstrapDialog.show({
                     title: that.data('href').slice(5),
-                    message: `<ul class="nav nav-tabs" id="tabContent"><li><a href="#details" data-toggle="tab">Details</a></li><li><a href="#status" data-toggle="tab">Status</a></li><li class="active"><a href="#diff" data-toggle="tab">Diff</a></li></ul>`
+                    message: `<ul class="nav nav-tabs" id="tabContent"><li class="active"><a href="#details" data-toggle="tab">Details</a></li><li><a href="#status" data-toggle="tab">Status</a></li></ul>`
                     +          '<div class="tab-content">'
-                    +               '<div class="tab-pane" id="details">'
+                    +               '<div class="tab-pane active" id="details">'
                     +                   '<br/><pre>' + outputArray[2] + '</pre>'
                     +               '</div>'
                     +               '<div class="tab-pane" id="status">'
                     +                   '<br/><pre>' + outputArray[1] + '</pre>'
                     +               '</div>'
-                    +               '<div class="tab-pane active" id="diff">'
-                    +              '</div> '
+                    //+               '<div class="tab-pane" id="diff">'
+                    //+              '</div> '
                     +           '</div>'
                 });
             })
