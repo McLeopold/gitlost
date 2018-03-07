@@ -30,7 +30,8 @@ $(function () {
                 var $graph = $("#graph");
                 $graph
                     .children('svg')
-                    .height('100%');
+                    .height('100%')
+                    .width('100%');;
                 $graph
                     .find('a')
                     .each(function () {
