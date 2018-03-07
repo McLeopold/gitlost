@@ -64,6 +64,36 @@ $(function () {
                         })
                     });
             });
+        // add right click menus
+        var menu = new BootstrapMenu(
+            'g.node', 
+            {
+                actions: [
+                    {
+                        name: 'Add Refs', 
+                        onClick: function (objectname) {
+                            var link_refs = $.ajax({
+                                type: 'GET',
+                                url: '/git/branches',
+                                contentType: 'application/json'
+                            })
+                            .then(function (branches) {
+                                branches
+                                    .filter(function (branch) {
+                                        return branch.objectname = objectname;
+                                    })
+                                    .forEach(function (branch) {
+                                        console.log(branch);
+                                    })
+                            });
+                        }
+                    }
+                ], 
+                fetchElementData: function ($el) { 
+                    return $el.find('title').text(); 
+                }
+            }
+        );
     }
     $("#close").click(function (event) {
         event.preventDefault();
