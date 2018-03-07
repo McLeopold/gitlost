@@ -23,30 +23,34 @@ $(function () {
     }
     // API functions
     function update_graph(dot) {
-        var svg = Viz(dot, {
-            format: 'svg',
-            engine: 'dot'
-        });
-        $("#svg_div")
-        .html(svg)
-        .find('a')
-        .each(function () {
-            var that = $(this);
-            that.data('href', that.attr('xlink:href'));
-            that.removeAttr('xlink:href');
-            that.css('cursor', 'pointer');
-        })
-        .click(function (event) {
-            var that = $(this);
-            $.ajax({
-                type: "GET",
-                url: that.data('href')
-            })
-                .done(function (output) {
-                    var outputArray = JSON.parse(output);
-                BootstrapDialog.show({
-                    title: that.data('href').slice(5),
-                    message: `<ul class="nav nav-tabs" id="tabContent"><li class="active"><a href="#details" data-toggle="tab">Details</a></li><li><a href="#status" data-toggle="tab">Status</a></li></ul>`
+        d3
+            .select("#graph")
+            .graphviz()
+            .renderDot(dot, function() {
+                var $graph = $("#graph");
+                $graph
+                    .children('svg')
+                    .height('100%');
+                $graph
+                    .find('a')
+                    .each(function () {
+                        var that = $(this);
+                        that.data('href', that.attr('href'));
+                        that.removeAttr('href');
+                        that.css('cursor', 'pointer');
+                    })
+                    .click(function (event) {
+                        event.preventDefault();
+                        var that = $(this);
+                        $.ajax({
+                            type: "GET",
+                            url: that.data('href')
+                        })
+                        .done(function (output) {
+                            var outputArray = JSON.parse(output);
+                            BootstrapDialog.show({
+                                title: that.data('href').slice(5),
+                                message: '<pre>' + output + '</pre>'
                     +          '<div class="tab-content">'
                     +               '<div class="tab-pane active" id="details">'
                     +                   '<br/><pre>' + outputArray[2] + '</pre>'
@@ -57,9 +61,10 @@ $(function () {
                     //+               '<div class="tab-pane" id="diff">'
                     //+              '</div> '
                     +           '</div>'
-                });
-            })
-        });
+                            });
+                        })
+                    });
+            });
     }
     $("#close").click(function (event) {
         event.preventDefault();
