@@ -42,10 +42,21 @@ $(function () {
                 type: "GET",
                 url: that.data('href')
             })
-            .done(function (output) {
+                .done(function (output) {
+                    var outputArray = JSON.parse(output);
                 BootstrapDialog.show({
                     title: that.data('href').slice(5),
-                    message: '<pre>' + output + '</pre>'
+                    message: `<ul class="nav nav-tabs" id="tabContent"><li class="active"><a href="#details" data-toggle="tab">Details</a></li><li><a href="#status" data-toggle="tab">Status</a></li></ul>`
+                    +          '<div class="tab-content">'
+                    +               '<div class="tab-pane active" id="details">'
+                    +                   '<br/><pre>' + outputArray[2] + '</pre>'
+                    +               '</div>'
+                    +               '<div class="tab-pane" id="status">'
+                    +                   '<br/><pre>' + outputArray[1] + '</pre>'
+                    +               '</div>'
+                    //+               '<div class="tab-pane" id="diff">'
+                    //+              '</div> '
+                    +           '</div>'
                 });
             })
         });
