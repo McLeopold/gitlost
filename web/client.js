@@ -88,6 +88,11 @@ $(function () {
             // update after select close
             setTimeout(get_graph(),1);
         });
+    $('select[name=graphTypes]')
+        .selectpicker()
+        .on('hide.bs.select', function () {
+            setTimeout(get_graph(),1);
+        });
     function update_refs(refs) {
         var refs_selected = settings.settings.branches || [];
         refs_select = $('select[name=refs]');
@@ -159,6 +164,7 @@ $(function () {
                 if (settings.settings.include_forward) {
                     $('button[name=include_forward]').addClass('active').attr('aria-pressed', 'true');
                 }
+                settings.set('draw_type', $('select[name=graphTypes]').val());
                 $('span.navbar-brand').text(repo.repo_path);
                 update_refs(repo.refs);
                 return $.ajax({
