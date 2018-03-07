@@ -30,7 +30,8 @@ $(function () {
                 var $graph = $("#graph");
                 $graph
                     .children('svg')
-                    .height('100%');
+                    .height('100%')
+                    .width('100%');;
                 $graph
                     .find('a')
                     .each(function () {
@@ -50,17 +51,15 @@ $(function () {
                             var outputArray = JSON.parse(output);
                             BootstrapDialog.show({
                                 title: that.data('href').slice(5),
-                                message: '<pre>' + output + '</pre>'
-                    +          '<div class="tab-content">'
-                    +               '<div class="tab-pane active" id="details">'
-                    +                   '<br/><pre>' + outputArray[2] + '</pre>'
-                    +               '</div>'
-                    +               '<div class="tab-pane" id="status">'
-                    +                   '<br/><pre>' + outputArray[1] + '</pre>'
-                    +               '</div>'
-                    //+               '<div class="tab-pane" id="diff">'
-                    //+              '</div> '
-                    +           '</div>'
+                                message: '<ul class="nav nav-tabs" id="tabContent"><li class="active"><a href="#details" data-toggle="tab">Details</a></li><li><a href="#status" data-toggle="tab">Status</a></li></ul>'
+                                +          '<div class="tab-content">'
+                                +               '<div class="tab-pane active" id="details">'
+                                +                   '<br/><pre>' + outputArray[2] + '</pre>'
+                                +               '</div>'
+                                +               '<div class="tab-pane" id="status">'
+                                +                   '<br/><pre>' + outputArray[1] + '</pre>'
+                                +               '</div>'
+                                +           '</div>'
                             });
                         })
                     });
@@ -86,6 +85,11 @@ $(function () {
                 return selected.indexOf(item) >= 0;
             }));
             // update after select close
+            setTimeout(get_graph(),1);
+        });
+    $('select[name=graphTypes]')
+        .selectpicker()
+        .on('hide.bs.select', function () {
             setTimeout(get_graph(),1);
         });
     function update_refs(refs) {
@@ -159,6 +163,7 @@ $(function () {
                 if (settings.settings.include_forward) {
                     $('button[name=include_forward]').addClass('active').attr('aria-pressed', 'true');
                 }
+                settings.set('draw_type', $('select[name=graphTypes]').val());
                 $('span.navbar-brand').text(repo.repo_path);
                 update_refs(repo.refs);
                 return $.ajax({
