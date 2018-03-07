@@ -153,7 +153,11 @@ $(function () {
                 })
             })
             .then(function (dot) {
-                update_graph(dot);
+                d3
+                    .select("#graph")
+                    .graphviz()
+                    .renderDot(dot);
+                //update_graph(dot);
                 if (graph_queued === false) {
                     graph_promise = null;
                     poll_git();
