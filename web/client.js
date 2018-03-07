@@ -23,32 +23,33 @@ $(function () {
     }
     // API functions
     function update_graph(dot) {
-        var svg = Viz(dot, {
-            format: 'svg',
-            engine: 'dot'
-        });
-        $("#svg_div")
-        .html(svg)
-        .find('a')
-        .each(function () {
-            var that = $(this);
-            that.data('href', that.attr('xlink:href'));
-            that.removeAttr('xlink:href');
-            that.css('cursor', 'pointer');
-        })
-        .click(function (event) {
-            var that = $(this);
-            $.ajax({
-                type: "GET",
-                url: that.data('href')
-            })
-            .done(function (output) {
-                BootstrapDialog.show({
-                    title: that.data('href').slice(5),
-                    message: '<pre>' + output + '</pre>'
-                });
-            })
-        });
+        d3
+            .select("#graph")
+            .graphviz()
+            .renderDot(dot, function() {
+                $("#graph")
+                    .find('a')
+                    .each(function () {
+                        var that = $(this);
+                        that.data('href', that.attr('href'));
+                        that.removeAttr('href');
+                        that.css('cursor', 'pointer');
+                    })
+                    .click(function (event) {
+                        event.preventDefault();
+                        var that = $(this);
+                        $.ajax({
+                            type: "GET",
+                            url: that.data('href')
+                        })
+                        .done(function (output) {
+                            BootstrapDialog.show({
+                                title: that.data('href').slice(5),
+                                message: '<pre>' + output + '</pre>'
+                            });
+                        })
+                    });
+            });
     }
     $("#close").click(function (event) {
         event.preventDefault();
@@ -153,11 +154,7 @@ $(function () {
                 })
             })
             .then(function (dot) {
-                d3
-                    .select("#graph")
-                    .graphviz()
-                    .renderDot(dot);
-                //update_graph(dot);
+                update_graph(dot);
                 if (graph_queued === false) {
                     graph_promise = null;
                     poll_git();
