@@ -23,6 +23,7 @@ $(function () {
     }
     // API functions
     function update_graph(dot) {
+        $("#graph").children().remove();
         d3
             .select("#graph")
             .graphviz()
