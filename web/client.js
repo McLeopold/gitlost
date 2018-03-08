@@ -77,14 +77,19 @@ $(function () {
                                 url: '/git/branches',
                                 contentType: 'application/json'
                             })
-                            .then(function (branches) {
-                                branches
-                                    .filter(function (branch) {
-                                        return branch.objectname = objectname;
+                            .then(function (all_branches) {
+                                var refs_select = $('select[name=refs]');
+                                var new_branches = refs_select.val().concat(
+                                    all_branches.filter(function (branch) {
+                                        return branch.objectname === objectname;
+                                    }).map(function (branch) {
+                                        return branch.refname;
                                     })
-                                    .forEach(function (branch) {
-                                        console.log(branch);
-                                    })
+                                );
+                                refs_select.val(new_branches);
+                                refs_select.selectpicker('refresh');
+                                settings.set('branches', new_branches);
+                                setTimeout(get_graph,1);
                             });
                         }
                     }
@@ -115,7 +120,7 @@ $(function () {
                 return selected.indexOf(item) >= 0;
             }));
             // update after select close
-            setTimeout(get_graph(),1);
+            setTimeout(get_graph,1);
         });
     $('select[name=graphTypes]')
         .selectpicker()
