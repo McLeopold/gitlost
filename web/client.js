@@ -144,6 +144,8 @@ $(function () {
                 refs_select.append($('<option>' + ref.ref_short + '</option>'));
             }
         });
+        $('#branchtree').treeview({data: setTreeList(refs)});
+
         refs_select.selectpicker('refresh');
         var refs_ul = $('ul[role=listbox]');
         refs_ul.find('li').each(function (idx, item) {
@@ -257,6 +259,36 @@ $(function () {
             });
         }
     }
+    function setTreeList(branchlist)
+    {
+        var data = [];
+        var prefix = [];
+
+        branchlist.forEach(function (branch) {
+            if(!branch.ref_short.includes("/"))
+            {
+                data.push({text: branch.ref_short}); 
+            }
+            else{
+                var splitBranches = branch.ref_short.split("/");
+                if (!(splitBranches[0] in prefix))
+                {
+                    prefix[splitBranches[0]] = splitBranches[1];
+                }
+                else if (branch.ref_short in prefix) {
+                    prefix[splitBranches[0]].append(splitBranches[1]);
+                }
+            }
+        }); 
+
+        for (i = 0; i < prefix.length; i++) {
+            var subnodes = setTreeList(prefix, prefix[i]);
+            data.push({text: branch, nodes: subnodes}); 
+        }
+
+        return data;
+    }
+
     // startup
     get_graph();
 });
