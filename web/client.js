@@ -65,6 +65,41 @@ $(function () {
                         })
                     });
             });
+        // add right click menus
+        var menu = new BootstrapMenu(
+            'g.node', 
+            {
+                actions: [
+                    {
+                        name: 'Add Refs', 
+                        onClick: function (objectname) {
+                            var link_refs = $.ajax({
+                                type: 'GET',
+                                url: '/git/branches',
+                                contentType: 'application/json'
+                            })
+                            .then(function (all_branches) {
+                                var refs_select = $('select[name=refs]');
+                                var new_branches = refs_select.val().concat(
+                                    all_branches.filter(function (branch) {
+                                        return branch.objectname === objectname;
+                                    }).map(function (branch) {
+                                        return branch.refname;
+                                    })
+                                );
+                                refs_select.val(new_branches);
+                                refs_select.selectpicker('refresh');
+                                settings.set('branches', new_branches);
+                                setTimeout(get_graph,1);
+                            });
+                        }
+                    }
+                ], 
+                fetchElementData: function ($el) { 
+                    return $el.find('title').text(); 
+                }
+            }
+        );
     }
     $("#close").click(function (event) {
         event.preventDefault();
@@ -86,7 +121,7 @@ $(function () {
                 return selected.indexOf(item) >= 0;
             }));
             // update after select close
-            setTimeout(get_graph(),1);
+            setTimeout(get_graph,1);
         });
     $('select[name=graphTypes]')
         .selectpicker()
