@@ -1,5 +1,13 @@
+import * as d3 from 'd3';
+import BootstrapDialog from 'bootstrap3-dialog';
+import BootstrapMenu from 'bootstrap-menu';
+import Sortable from 'sortablejs';
+import * as $ from 'jquery';
+require('bootstrap-select');
+require('d3-graphviz');
+
 $(function () {
-    settings = {};
+    var settings = {};
     // Configure UI
     $( "button[name=rankdir]")
         .click(function () {
