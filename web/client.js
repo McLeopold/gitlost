@@ -5,6 +5,7 @@ import Sortable from 'sortablejs';
 import * as $ from 'jquery';
 require('bootstrap-select');
 require('d3-graphviz');
+import './graph.css';
 
 $(function () {
     var settings = {};
