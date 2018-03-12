@@ -145,13 +145,12 @@ $(function () {
             }
         });
 
-        var tree_refs = $.get(
+        $.get(
             "/git/branches",
             {},
             function(data) {
                 $('#branchtree').treeview({data: setTreeList(data)});
-            }
-        );;
+            });
 
         refs_select.selectpicker('refresh');
         var refs_ul = $('ul[role=listbox]');
