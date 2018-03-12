@@ -5,16 +5,30 @@
   "main": "./lib/graph.js",
   "bin": "./bin/gitlost.js",
   "dependencies": {
+    "bootstrap": "^3.0.0",
     "bootstrap-menu": "^1.0.14",
-    "bootstrap3-dialog": "^1.35.3",
+    "bootstrap-select": "^1.12.4",
+    "bootstrap3-dialog": "^1.35.4",
     "d3": "^4.13.0",
     "d3-graphviz": "^1.3.4",
+    "jquery": "^3.3.1",
     "md5": "^2.2.1",
     "opn": "^4.0.2",
     "sortablejs": "^1.5.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "babel-loader": "^7.1.4",
+    "css-loader": "^0.28.10",
+    "file-loader": "^1.1.11",
+    "style-loader": "^0.20.3",
+    "url-loader": "^1.0.1",
+    "webpack": "^4.1.1",
+    "webpack-cli": "^2.0.10",
+    "webpack-node-externals": "^1.6.0"
+  },
   "scripts": {
+    "build": "webpack && copy web\\graph.html dist\\graph.html && copy node_modules\\viz.js\\viz.js dist\\viz.js",
+    "start": "./dist/gitlost.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
