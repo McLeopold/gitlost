@@ -22,13 +22,10 @@
         <link rel="stylesheet" href="graph.css" />
     </head>
     <body>
-        <button class="btn btn-default" data-toggle="collapse" data-target="#branchtree">Branches</button>
-        <div class="row">
-            <div id="branchtree" class="collapse col-xs-4 pull-left"></div>
-        </div>
-        
-
         <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container">
+                <button class="btn btn-default" data-toggle="collapse" data-target="#branchtree">Branches</button>            
+            </div>
             <div class="container">
                 <div class="navbar-header">
                 <span class="navbar-brand" href="#">Project name</span>
@@ -60,7 +57,9 @@
                     </ul>
                 </div>
             </nav>
-
+        <div class="row">
+            <div id="branchtree" class="collapse col-xs-4 pull-left"></div>
+        </div>        
         <!-- <div id="svg_div"></div> -->
         <div id="graph" style="text-align: center; height: 100%;"></div>
         <!-- <div id="graph" style="height: 100%;"></div> -->

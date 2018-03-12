@@ -144,7 +144,14 @@ $(function () {
                 refs_select.append($('<option>' + ref.ref_short + '</option>'));
             }
         });
-        $('#branchtree').treeview({data: setTreeList(refs)});
+
+        var tree_refs = $.get(
+            "/git/branches",
+            {},
+            function(data) {
+                $('#branchtree').treeview({data: setTreeList(data)});
+            }
+        );;
 
         refs_select.selectpicker('refresh');
         var refs_ul = $('ul[role=listbox]');
@@ -259,31 +266,35 @@ $(function () {
             });
         }
     }
-    function setTreeList(branchlist)
+    function setTreeList(branches)
     {
         var data = [];
-        var prefix = [];
+        var prefixes = {};
 
-        branchlist.forEach(function (branch) {
-            if(!branch.ref_short.includes("/"))
+        branches.forEach(function (branch) {
+            if(!branch.refname.includes("/"))
             {
-                data.push({text: branch.ref_short}); 
+                data.push({text: branch.refname}); 
             }
-            else{
-                var splitBranches = branch.ref_short.split("/");
-                if (!(splitBranches[0] in prefix))
+            else
+            {
+                var splitPos = branch.refname.indexOf("/");
+                var prefix = branch.refname.substring(0, splitPos);
+                var suffix = branch.refname.substring(splitPos + 1);
+                if (!(prefix in prefixes))
                 {
-                    prefix[splitBranches[0]] = splitBranches[1];
+                    prefixes[prefix] = [{refname: suffix, objectname: branch.objectname}];
                 }
-                else if (branch.ref_short in prefix) {
-                    prefix[splitBranches[0]].append(splitBranches[1]);
+                else
+                {
+                    prefixes[prefix].push({refname: suffix, objectname: branch.objectname});
                 }
             }
         }); 
 
-        for (i = 0; i < prefix.length; i++) {
-            var subnodes = setTreeList(prefix, prefix[i]);
-            data.push({text: branch, nodes: subnodes}); 
+        for (var prefix in prefixes) {
+            var subnodes = setTreeList(prefixes[prefix]);
+            data.push({text: prefix, nodes: subnodes}); 
         }
 
         return data;
