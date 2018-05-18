@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 var opn = require('opn');
 var server = require("../lib/server.js");
 
