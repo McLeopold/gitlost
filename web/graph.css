@@ -1,3 +1,7 @@
+@import '~bootstrap/dist/css/bootstrap.css';
+@import '~bootstrap-select/dist/css/bootstrap-select.css';
+@import '~bootstrap3-dialog/dist/css/bootstrap-dialog.css';
+
 html {
     height:100%;
 }
