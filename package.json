@@ -1,6 +1,6 @@
 {
   "name": "gitlost",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Git repository graph visualizer and manipulator in the browser",
   "main": "./lib/graph.js",
   "bin": "./bin/gitlost.js",
