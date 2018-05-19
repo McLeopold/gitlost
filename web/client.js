@@ -6,7 +6,7 @@ $(function () {
             settings.set('rankdir', $(this).val());
             get_graph();
         });
-    $("button[name=include_forward")
+    $("button[name=include_forward]")
         .click(function () {
             settings.set('include_forward', !$(this).hasClass('active'));
             get_graph();
