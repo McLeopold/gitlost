@@ -13,6 +13,7 @@
         <script src="https://d3js.org/d3.v5.js"></script>
         <script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
         <script src="https://unpkg.com/d3-graphviz@1.3.4/build/d3-graphviz.min.js"></script>
+        <script src="bootstrap-treeview.js"></script>
         <script src="client.js"></script>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
         <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">-->
@@ -21,8 +22,10 @@
         <link rel="stylesheet" href="graph.css" />
     </head>
     <body>
-
         <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container">
+                <button class="btn btn-default" data-toggle="collapse" data-target="#branchtree">Branches</button>            
+            </div>
             <div class="container">
                 <div class="navbar-header">
                 <span class="navbar-brand" href="#">Project name</span>
@@ -53,9 +56,10 @@
                         <button type="button" class="btn btn-default" id="close">Close</button>
                     </ul>
                 </div>
-            </div>
-        </nav>
-
+            </nav>
+        <div class="row">
+            <div id="branchtree" class="collapse col-xs-4 pull-left"></div>
+        </div>        
         <!-- <div id="svg_div"></div> -->
         <div id="graph" style="text-align: center; height: 100%;"></div>
         <!-- <div id="graph" style="height: 100%;"></div> -->

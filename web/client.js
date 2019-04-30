@@ -144,6 +144,14 @@ $(function () {
                 refs_select.append($('<option>' + ref.ref_short + '</option>'));
             }
         });
+
+        $.get(
+            "/git/branches",
+            {},
+            function(data) {
+                $('#branchtree').treeview({data: setTreeList(data)});
+            });
+
         refs_select.selectpicker('refresh');
         var refs_ul = $('ul[role=listbox]');
         refs_ul.find('li').each(function (idx, item) {
@@ -257,6 +265,40 @@ $(function () {
             });
         }
     }
+    function setTreeList(branches)
+    {
+        var data = [];
+        var prefixes = {};
+
+        branches.forEach(function (branch) {
+            if(!branch.refname.includes("/"))
+            {
+                data.push({text: branch.refname}); 
+            }
+            else
+            {
+                var splitPos = branch.refname.indexOf("/");
+                var prefix = branch.refname.substring(0, splitPos);
+                var suffix = branch.refname.substring(splitPos + 1);
+                if (!(prefix in prefixes))
+                {
+                    prefixes[prefix] = [{refname: suffix, objectname: branch.objectname}];
+                }
+                else
+                {
+                    prefixes[prefix].push({refname: suffix, objectname: branch.objectname});
+                }
+            }
+        }); 
+
+        for (var prefix in prefixes) {
+            var subnodes = setTreeList(prefixes[prefix]);
+            data.push({text: prefix, nodes: subnodes}); 
+        }
+
+        return data;
+    }
+
     // startup
     get_graph();
 });
