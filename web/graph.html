@@ -1,63 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <title>GitLost</title>
-        <script src="https://code.jquery.com/jquery-3.1.1.js" integrity="sha256-16cdPddA6VdVInumRGo6IbivbERE8p7CQR3HzTBuELA=" crossorigin="anonymous"></script>
-        <!--<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>-->
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
-        <script src="bootstrap-dialog.js"></script>
-        <script src="BootstrapMenu.js"></script>
-        <script src="Sortable.js"></script>
-        <script src="https://d3js.org/d3.v5.js"></script>
-        <script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
-        <script src="https://unpkg.com/d3-graphviz@1.3.4/build/d3-graphviz.min.js"></script>
-        <script src="client.js"></script>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-        <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">-->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.css">
-        <link rel="stylesheet" href="bootstrap-dialog.css" />
-        <link rel="stylesheet" href="graph.css" />
-    </head>
-    <body>
 
-        <nav class="navbar navbar-default navbar-fixed-top">
-            <div class="container">
-                <div class="navbar-header">
-                <span class="navbar-brand" href="#">Project name</span>
-                </div>
-                <div id="navbar" class="navbar">
-                    <ul class="nav navbar-nav">
-                        <div class="btn-group" role="group" aria-label="...">
-                            <button name="rankdir" value="LR" type="button" class="btn btn-default">&#x1f81a;&nbsp;LR</button>
-                            <button name="rankdir" value="RL" type="button" class="btn btn-default">&#x1f818;&nbsp;RL</button>
-                            <button name="rankdir" value="BT" type="button" class="btn btn-default">&#x1f819;&nbsp;BT</button>
-                            <button name="rankdir" value="TB" type="button" class="btn btn-default">&#x1f81b;&nbsp;TB</button>
-                        </div>
-                        <select name="refs" class="selectpicker" multiple>
-                        </select>
-                        <button name="include_forward" type="button" class="btn btn-default" data-toggle="button" aria-pressed="false" autocomplete="off">Include Forward Branches</button>
-                        <select name="graphTypes" class="selectpicker">
-                            <option value="dot" selected>Dot</option>
-                            <option value="neato" >Neato</option>
-                            <option value="twopi" >TwoPi</option>
-                            <option value="circo" >Circo</option>
-                            <option value="fdp" >FDP</option>
-                            <option value="sfdp" >SFDP</option>
-                            <option value="patchwork" >Patchwork</option>
-                            <option value="osage" >Osage</option>
-                        </select>
-                    </ul>
-                    <ul class="nav navbar-nav navbar-right">
-                        <button type="button" class="btn btn-default" id="close">Close</button>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+<head>
+  <meta charset="utf-8" />
+  <title>GitLost</title>
+  <script src="https://code.jquery.com/jquery-3.1.1.js"
+    integrity="sha256-16cdPddA6VdVInumRGo6IbivbERE8p7CQR3HzTBuELA=" crossorigin="anonymous"></script>
 
-        <!-- <div id="svg_div"></div> -->
-        <div id="graph" style="text-align: center; height: 100%;"></div>
-        <!-- <div id="graph" style="height: 100%;"></div> -->
-    </body>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@3.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <link href="https://unpkg.com/splitpanes/dist/splitpanes.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+  <script src="https://unpkg.com/splitpanes"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/sortablejs@1.8.4/Sortable.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.20.0/vuedraggable.umd.min.js"></script>
+
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://d3js.org/d3.v5.js"></script>
+  <script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
+  <script src="https://unpkg.com/d3-graphviz@2.6.1/build/d3-graphviz.min.js"></script>
+  <script src="client.js"></script>
+  <link rel="stylesheet" href="graph.css" />
+</head>
+
+<body>
+  <div id="app">
+    <v-app id="gitlost">
+      <v-app-bar app dark height="100px">
+        <v-chip-group v-model="selected_repos_indexes" multiple>
+          <v-chip v-for="repo in repos" filter outlined close v-bind:key="repo" @click:close="remove_repo(repo)">{{repo}}</v-chip>
+        </v-chip-group>
+        <div style="flex: 4;"></div>
+        <v-text-field label="Add Repo" @keyup.enter.native="add_repo"></v-text-field>
+      </v-app-bar>
+      <v-content>
+      <gitlost-graph inline-template v-for="index in selected_repos_indexes" :repo="repos[index]" v-bind:key="index">
+        <v-card class="ma-4" min-height="300px">
+          <v-toolbar elevation="0" dark>
+            <v-app-bar-nav-icon @click="sidebarSize = (sidebarSize === .1 ? 20 : .1)"></v-app-bar-nav-icon>
+            <v-toolbar-title>{{ repo }}</v-toolbar-title>
+            <div class="flex-grow-1"></div>
+            <v-select v-model="settings.draw_type" :items="draw_types" dense style="margin-right: 12px; max-width: 128px;"></v-select>
+            <v-switch v-model="settings.include_forward" inset hide-details label="Forward" style="margin-right: 12px;"></v-switch>
+            <v-btn-toggle v-model="settings.rankdir">
+              <v-btn text value="LR"><v-icon>mdi-transfer-right</v-icon></v-btn>
+              <v-btn text value="RL"><v-icon>mdi-transfer-left</v-icon></v-btn>
+              <v-btn text value="BT"><v-icon>mdi-transfer-up</v-icon></v-btn>
+              <v-btn text value="TB"><v-icon>mdi-transfer-down</v-icon></v-btn>
+            </v-btn-toggle>
+          </v-toolbar>
+          <splitpanes class="default-theme" watch-slots @resized="sidebarSize = $event[0].width">
+            <v-content :splitpanes-size="sidebarSize" splitpanes-min="0" class="pa-2" style="background-color: #ffffff" elevation="0">
+              <v-btn block :loading="loading" :disabled="loading" @click="updateGraph">Refresh Graph
+              </v-btn>
+              <v-text-field v-model="goto" label="search" clearable clear-icon="mdi-close-circle-outline" @keyup.enter.native="zoom_graph_on">
+              </v-text-field>
+              <v-expansion-panels accordion multiple :value="nav_expand">
+                <v-expansion-panel>
+                  <v-expansion-panel-header>Selected</v-expansion-panel-header>
+                  <v-expansion-panel-content>
+                    <v-list shaped dense>
+                      <v-list-item-group>
+                        <draggable v-model="settings.branches">
+                          <v-list-item v-for="node in settings.branches" :key="node.id">
+                            <v-list-item-content>
+                              <v-list-item-title v-text="node.id"></v-list-item-title>
+                              <v-list-item-subtitle v-text="node.ref_prefixes.map(prefix => prefix === '' ? 'local' : prefix).join(' ')"></v-list-item-subtitle>
+                            </v-list-item-content>
+                            <v-list-item-action>
+                              <v-btn icon @click="remove_branch(node.id)">
+                                <v-icon>mdi-close</v-icon>
+                              </v-btn>
+                            </v-list-item-action>
+                          </v-list-item>
+                        </draggable>
+                      </v-list-item-group>
+                    </v-list>
+                  </v-expansion-panel-content>
+                </v-expansion-panel>
+                <v-expansion-panel>
+                  <v-expansion-panel-header>Branches</v-expansion-panel-header>
+                  <v-expansion-panel-content>
+                    <v-text-field v-model="search" label="Search" clearable
+                      clear-icon="mdi-close-circle-outline"></v-text-field>
+                    <v-treeview dense shaped selectable return-object activatable open-on-click
+                      v-model="settings.branches" :open="settings.opened" :items="items" :search="search"
+                      v-on:update:active="selectTree"
+                      style="max-height: 600px; overflow: auto;"></v-treeview>
+                  </v-expansion-panel-content>
+                </v-expansion-panel>
+              </v-expansion-panels>
+            </v-content>
+            <v-content :splitpanes-size="100 - sidebarSize" style="height: 100%;">
+              <v-container class="graph" id="graph" fluid fill-height>
+              </v-container>
+            </v-content>
+          </splitpanes>
+        </v-card>
+      </gitlost-graph>
+      </v-content>
+    </v-app>
+  </div>
+  <script>
+
+    var vm = new Vue({
+      el: '#app',
+      components: { splitpanes },
+      vuetify: new Vuetify(),
+      data() {
+        return {
+          repos: [],
+          selected_repos: [],
+          selected_repos_indexes: [],
+        }
+      },
+      methods: {
+        add_repo: function(event) {
+          var repo = event.target.value;
+          console.log(repo);
+          axios.get('/git/status', { headers: { 'gitlost-repo': repo }})
+          .then(result => {
+            this.repos.push(repo);
+            this.selected_repos.push(repo);
+            event.target.value = '';
+          })
+        },
+        remove_repo: function(repo) {
+          var index = this.repos.indexOf(repo);
+          if (index !== -1) this.repos.splice(index, 1);
+        },
+
+      },
+      mounted() {
+        if (localStorage.gitlost_repos) {
+          this.repos = JSON.parse(localStorage.gitlost_repos || '[]');
+          this.selected_repos = JSON.parse(localStorage.gitlost_selected_repos || '[]');
+          this.selected_repos_indexes = this.selected_repos.map(repo => this.repos.indexOf(repo));
+        }
+      },
+      watch: {
+        repos(new_repos) {
+          localStorage.gitlost_repos = JSON.stringify(new_repos);
+        },
+        selected_repos_indexes(new_selected_repos_indexes) {
+          localStorage.gitlost_selected_repos = JSON.stringify(new_selected_repos_indexes.map(i => this.repos[i]));
+        },
+      }
+    })
+  </script>
+</body>
+
 </html>

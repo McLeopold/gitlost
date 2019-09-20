@@ -1,9 +1,23 @@
-html {
-    height:100%;
-}
-
 body {
     font-family: Consolas, monospace;
-    padding-top: 72px;
-    height:100%
+}
+
+svg {
+    height: 100%;
+}
+
+.graph {
+    background-color: #ffffff;
+}
+
+.splitpanes--vertical {
+    display: flex;
+}
+
+.splitpanes__pane {
+    height: auto;
+}
+
+.v-toolbar__content .v-input__control > .v-input__slot {
+    margin-bottom: 0px;
 }

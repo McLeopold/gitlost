@@ -1,262 +1,312 @@
-$(function () {
-    settings = {};
-    // Configure UI
-    $( "button[name=rankdir]")
-        .click(function () {
-            settings.set('rankdir', $(this).val());
-            get_graph();
-        });
-    $("button[name=include_forward]")
-        .click(function () {
-            settings.set('include_forward', !$(this).hasClass('active'));
-            get_graph();
-        })
-    // Load saved settings
-    function Settings(repo_path) {
-        this.repo_path = repo_path;
-        this.settings = JSON.parse(localStorage.getItem(this.repo_path) || '{}');
-        if (settings.include_forward === undefined) settings.include_forward = false;
+Vue.component('gitlost-graph', {
+  components: { splitpanes },
+  props: ['repo'],
+  data() {
+    return {
+      // treeview
+      items: [],
+      search: null,
+      // ui elements
+      graph: null,
+      // ui
+      top_items: ['HEAD', 'master', 'tags', ''],
+      draw_types: ['dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp', 'patchwork', 'osage'],
+      nav_expand: [0],
+      loading: false,
+      goto: null,
+      sidebarSize: 20,
+      graph_queued: false,
+      graph_promise: null,
+      polling: null,
+      settings: {
+        branches: [],
+        opened: [],
+        rankdir: 'LR',
+        include_forward: false,
+        draw_type: 'dot',
+      },
     }
-    Settings.prototype.set = function(key, value) {
-        this.settings[key] = value;
-        localStorage.setItem(this.repo_path, JSON.stringify(this.settings));
-    }
-    // API functions
-    function update_graph(dot) {
-        $("#graph").children().remove();
-        d3
-            .select("#graph")
-            .graphviz()
-            .renderDot(dot, function() {
-                var $graph = $("#graph");
-                $graph
-                    .children('svg')
-                    .height('100%')
-                    .width('100%');;
-                $graph
-                    .find('a')
-                    .each(function () {
-                        var that = $(this);
-                        that.data('href', that.attr('href'));
-                        that.removeAttr('href');
-                        that.css('cursor', 'pointer');
-                    })
-                    .click(function (event) {
-                        event.preventDefault();
-                        var that = $(this);
-                        $.ajax({
-                            type: "GET",
-                            url: that.data('href')
-                        })
-                        .done(function (output) {
-                            var outputArray = JSON.parse(output);
-                            BootstrapDialog.show({
-                                title: that.data('href').slice(5),
-                                message: '<ul class="nav nav-tabs" id="tabContent"><li class="active"><a href="#details" data-toggle="tab">Details</a></li><li><a href="#status" data-toggle="tab">Status</a></li></ul>'
-                                +          '<div class="tab-content">'
-                                +               '<div class="tab-pane active" id="details">'
-                                +                   '<br/><pre>' + outputArray[2] + '</pre>'
-                                +               '</div>'
-                                +               '<div class="tab-pane" id="status">'
-                                +                   '<br/><pre>' + outputArray[1] + '</pre>'
-                                +               '</div>'
-                                +           '</div>'
-                            });
-                        })
-                    });
-            });
-        // add right click menus
-        var menu = new BootstrapMenu(
-            'g.node', 
-            {
-                actions: [
-                    {
-                        name: 'Add Refs', 
-                        onClick: function (objectname) {
-                            var link_refs = $.ajax({
-                                type: 'GET',
-                                url: '/git/branches',
-                                contentType: 'application/json'
-                            })
-                            .then(function (all_branches) {
-                                var refs_select = $('select[name=refs]');
-                                var new_branches = refs_select.val().concat(
-                                    all_branches.filter(function (branch) {
-                                        return branch.objectname === objectname;
-                                    }).map(function (branch) {
-                                        return branch.refname;
-                                    })
-                                );
-                                refs_select.val(new_branches);
-                                refs_select.selectpicker('refresh');
-                                settings.set('branches', new_branches);
-                                setTimeout(get_graph,1);
-                            });
-                        }
-                    }
-                ], 
-                fetchElementData: function ($el) { 
-                    return $el.find('title').text(); 
-                }
-            }
-        );
-    }
-    $("#close").click(function (event) {
-        event.preventDefault();
-        $.ajax({
-            type: "PUT",
-            url: "/close"
+  },
+  methods: {
+    selectTree: function (stuff) {
+      this.zoom_graph_on(stuff[0].ref_prefixes[0] + stuff[0].id);
+      //console.log(stuff);
+    },
+    remove_branch: function (id) {
+      this.settings.branches.splice(this.settings.branches.findIndex(branch => branch.id === id), 1);
+    },
+    updateGraph: function () {
+      this.loading = true;
+      //var branches = this.settings.branches.map(branch => branch.ref_prefixes.map(prefix => prefix + branch.id)).flat();
+      //console.log(branches);
+      //settings.set('branches', branches);
+      // update after select close
+      setTimeout(() => {
+        this.get_graph(this).then(() => this.loading = false);
+      }, 1);
+    },
+    updateRefs: function (refs) {
+      var sortedRefs = refs
+        .map(function (ref) {
+          return ref.ref_name.replace('refs/', '');
         })
-        .done(function (response) {
-            window.close();
-        });
-    });
-    var refs_select;    
-    var refs_sortable;
-    $('select[name=refs]')
-        .selectpicker({actionsBox: true})
-        .on('hide.bs.select', function () {
-            var selected = refs_select.val();
-            settings.set('branches', refs_sortable.toArray().filter(function (item) {
-                return selected.indexOf(item) >= 0;
-            }));
-            // update after select close
-            setTimeout(get_graph,1);
-        });
-    $('select[name=graphTypes]')
-        .selectpicker()
-        .on('hide.bs.select', function () {
-            setTimeout(get_graph(),1);
-        });
-    function update_refs(refs) {
-        var refs_selected = settings.settings.branches || [];
-        refs_select = $('select[name=refs]');
-        refs_select.find('option').remove();
-        refs_selected.forEach(function (ref_short) {
-            if (refs.some(function (ref) {
-                return ref.ref_short === ref_short;
-            })) {
-                refs_select.append($('<option>' + ref_short + '</option>'));
-            }
+        .map(function (ref_name) {
+          var parts = ref_name.match(/(tags\/|heads\/|remotes\/(\w+\/))(.+)/)
+          return parts
+            ? { prefix: parts[2] || '', parts: parts[3].split('/'), name: (parts[2] || '') + parts[3], tag: parts[1] === 'tags/' }
+            : { prefix: '', parts: ref_name.split('/'), name: ref_name };
         })
-        refs.forEach(function (ref) {
-            if (refs_selected.indexOf(ref.ref_short) === -1) {
-                refs_select.append($('<option>' + ref.ref_short + '</option>'));
-            }
+        .sort(function (a, b) {
+          if (a.parts[0] === 'master') return b.parts[0] !== 'master' ? -1 : a.parts[0] === '' ? -1 : 1;
+          if (b.parts[0] === 'master') return 1;
+          if (a.tag && !b.tag) return 1;
+          if (b.tag && !a.tag) return -1;
+          if (a.parts.length > 1 && b.parts.length === 1) return -1;
+          if (a.parts.length === 1 && b.parts.length > 1) return 1;
+          return (a.name > b.name) ? 1 : -1;
         });
-        refs_select.selectpicker('refresh');
-        var refs_ul = $('ul[role=listbox]');
-        refs_ul.find('li').each(function (idx, item) {
-            $(item).attr('data-id', $(item).find('span.text').text());
+      //console.log(sortedRefs);
+      var newTree = this.items;
+      this.top_items.forEach(item => {
+        if (!newTree.find(element => element.name === item)) newTree.push({ id: item, name: item });
+      })
+      sortedRefs.forEach(ref => {
+        var treePath = '';
+        var treeLoc = newTree;
+        if (ref.tag) treeLoc = treeLoc.find(element => element.name === 'tags');
+        else if (ref.parts.length === 1 && !this.top_items.includes(ref.parts[0])) treeLoc = newTree.find(element => element.name === '');
+        ref.parts.forEach(part => {
+          treePath += (treePath !== '' ? '/' : '') + part;
+          if (!Array.isArray(treeLoc)) {
+            if (!treeLoc.children) treeLoc.children = [];
+            treeLoc = treeLoc.children;
+          }
+          var newTreeLoc = treeLoc.find(element => element.name === part);
+          if (!newTreeLoc) {
+            newTreeLoc = {
+              id: treePath,
+              name: part,
+            };
+            treeLoc.push(newTreeLoc);
+          }
+          treeLoc = newTreeLoc;
+        });
+        if (!treeLoc.ref_prefixes) treeLoc.ref_prefixes = [ref.prefix];
+        else if (!treeLoc.ref_prefixes.includes(ref.prefix)) treeLoc.ref_prefixes.push(ref.prefix);
+      });
+      //console.log(newTree);
+      //this.settings.branches = settings.settings.branches.map(branch => { return { id: branch }; });
+    },
+    zoom_graph_on: function () {
+      // TODO: remove jquery, search item data for key
+      this.zoom_graph_to($(this.graph).find("text:contains(" + this.goto + ")"));
+    },
+    zoom_graph_to: function (target) {
+      var gv = d3.select(this.graph).graphviz();
+      var svg = $(this.graph).children('svg');
+      var viewbox = svg.attr('viewBox').split(' ').map(a => parseFloat(a));
+      var g = svg.children('.graph');
+      var scale = Math.max(Math.max(viewbox[2], viewbox[3])/1000, parseFloat(g.attr('transform').match(/scale\((.+)\)/)[1]));
+      var x = parseFloat($(target).attr('x'));
+      var y = parseFloat($(target).attr('y'));
+      gv.zoomSelection().transition().duration(750).call(gv.zoomBehavior().transform, d3.zoomIdentity.scale(scale).translate(-x + viewbox[2] / 2 / scale, -y + viewbox[3] / 2 / scale));
+    },
+    update_graph: function (dot) {
+      var t = d3.transition()
+        .duration(750)
+        .ease(d3.easeLinear);
+      d3
+        .select(this.graph)
+        .graphviz({
+          zoomScaleExtent: [0.1, 100],
         })
-        if (refs_sortable) refs_sortable.destroy();
-        refs_sortable = Sortable.create(refs_ul.get(0), {
-            store: {
-                get: function (sortable) {
-                    var sorted = refs_selected.slice(0);
-                    refs.forEach(function (ref) {
-                        if (sorted.indexOf(ref.ref_short) === -1) {
-                            sorted.push(ref.ref_short);
-                        }
-                    });
-                    return sorted;
-                },
-                set: function (sortable) {
-                    var selected = refs_select.val();
-                    settings.set('branches', sortable.toArray().filter(function (item) {
-                        return selected.indexOf(item) >= 0;
-                    }));
-                }
-            }
-        })
-        refs_select.selectpicker('val', refs_selected);
-    }
-    /*
-     * Prevent multiple ajax requests from firing
-     * Allow at most one request to queue up due to changed data
-     * Fire off next request with current data
-     * Shut off polling when requesting graph update
-     */
-    var graph_queued = false;
-    var graph_promise = null;
-    var polling = null;
-    function get_graph() {
-        if (polling !== null) {
-            //polling.abort();
-        }
-        if (graph_promise === null) {
-            // Inital request
-            graph_promise = $.ajax({
-                type: 'GET',
-                url: '/refs',
-                contentType: 'application/json'
+        .transition(t)
+        .renderDot(dot, function () {
+          var $graph = $(this.graph);
+          $graph
+            .children('svg')
+            .height('100%')
+            .width('100%');;
+          $graph
+            .find('a')
+            .each(function () {
+              var that = $(this);
+              that.data('href', that.attr('href'));
+              that.removeAttr('href');
+              that.css('cursor', 'pointer');
             })
-            .then(function (repo) {
-                settings = new Settings(repo.repo_path);
-                if (settings.settings.rankdir) {
-                    $('button[name=rankdir][value=' + settings.settings.rankdir + ']').button('toggle');
-                }
-                if (settings.settings.include_forward) {
-                    $('button[name=include_forward]').addClass('active').attr('aria-pressed', 'true');
-                }
-                settings.set('draw_type', $('select[name=graphTypes]').val());
-                $('span.navbar-brand').text(repo.repo_path);
-                update_refs(repo.refs);
-                return $.ajax({
-                    type: "GET",
-                    url: "/dot",
-                    headers: {'gitlost-settings': JSON.stringify(settings.settings)},
-                    contentType: 'application/json',
+            .click(function (event) {
+              event.preventDefault();
+              zoom_graph_to(event.target);
+              return;
+              var that = $(this);
+              axios.get(that.data('href'), { headers: { 'gitlost-repo': this.repo } })
+                /*
+                $.ajax({
+                  type: "GET",
+                  url: that.data('href')
                 })
-            })
-            .then(function (dot) {
-                update_graph(dot);
-                if (graph_queued === false) {
-                    graph_promise = null;
-                    poll_git();
-                }
-            })
-            .catch(function (err) {
-                graph_promise = null;
-                console.log(err);
+                */
+                .then(function (output) {
+                  //output = output.data;
+                  //var outputArray = JSON.parse(output);
+                  BootstrapDialog.show({
+                    title: that.data('href').slice(5),
+                    message: '<ul class="nav nav-tabs" id="tabContent"><li class="active"><a href="#details" data-toggle="tab">Details</a></li><li><a href="#status" data-toggle="tab">Status</a></li></ul>'
+                      + '<div class="tab-content">'
+                      + '<div class="tab-pane active" id="details">'
+                      + '<br/><pre>' + output[2] + '</pre>'
+                      + '</div>'
+                      + '<div class="tab-pane" id="status">'
+                      + '<br/><pre>' + output[1] + '</pre>'
+                      + '</div>'
+                      + '</div>'
+                  });
+                })
             });
-            return graph_promise;
-        } else if (graph_queued === false) {
-            // Queue one additional request
-            graph_queued = true;
-            graph_promise = graph_promise.then(function () {
-                graph_queued = false;
-                graph_promise = null;
-                graph_promise = get_graph();
-                return graph_promise;
-            });
-        } else {
-            // Prevent multiple requests from queueing
-            return graph_promise;
+        });
+      // add right click menus
+      /*
+      var menu = new BootstrapMenu(
+        'g.node', 
+        {
+          actions: [
+            {
+              name: 'Add Refs', 
+              onClick: function (objectname) {
+                var link_refs = axios.get('/git/branches', { headers: { 'gitlost-repo': this.repo } })
+                var link_refs = $.ajax({
+                  type: 'GET',
+                  url: '/git/branches',
+                  contentType: 'application/json'
+                })
+                .then(function (all_branches) {
+                  all_branches = all_branches.data;
+                  var refs_select = $('select[name=refs]');
+                  var new_branches = refs_select.val().concat(
+                    all_branches.filter(function (branch) {
+                      return branch.objectname === objectname;
+                    }).map(function (branch) {
+                      return branch.refname;
+                    })
+                  );
+                  refs_select.val(new_branches);
+                  refs_select.selectpicker('refresh');
+                  settings.set('branches', new_branches);
+                  setTimeout(get_graph,1);
+                });
+              }
+            }
+          ], 
+          fetchElementData: function ($el) { 
+            return $el.find('title').text(); 
+          }
         }
+      );
+      */
+    },
+    get_graph: function () {
+      if (this.polling !== null) {
+        //polling.abort();
+      }
+      if (this.graph_promise === null) {
+        // Inital request
+        this.graph_promise = axios.get('/refs', { headers: { 'gitlost-repo': this.repo } })
+          .then((repo) => {
+            repo = repo.data;
+            //settings = new Settings(repo.repo_path);
+            /*
+            if (settings.settings.include_forward) {
+              $('button[name=include_forward]').addClass('active').attr('aria-pressed', 'true');
+            }
+            settings.set('draw_type', $('select[name=graphTypes]').val());
+            */
+            this.updateRefs(repo.refs);
+            var passed_settings = {
+              branches: this.settings.branches.map(branch =>
+                branch.ref_prefixes.map(prefix => prefix + branch.id)
+              ).flat(),
+              rankdir: this.settings.rankdir,
+              include_forward: this.settings.include_forward,
+              draw_type: this.settings.draw_type,
+            };
+            if (passed_settings.branches.length === 0) passed_settings.branches = ['master'];
+            return axios.get('/dot', { headers: {
+              'gitlost-repo': this.repo,
+              'gitlost-settings': JSON.stringify(passed_settings)
+            } });
+          })
+          .then((dot) => {
+            dot = dot.data;
+            this.update_graph(dot);
+            if (this.graph_queued === false) {
+              this.graph_promise = null;
+              this.poll_git();
+            }
+          })
+          .catch((err) => {
+            this.graph_promise = null;
+            console.log(err);
+          });
+        return this.graph_promise;
+      } else if (this.graph_queued === false) {
+        // Queue one additional request
+        this.graph_queued = true;
+        this.graph_promise = this.graph_promise.then(() => {
+          this.graph_queued = false;
+          this.graph_promise = null;
+          this.graph_promise = this.get_graph();
+          return this.graph_promise;
+        });
+      } else {
+        // Prevent multiple requests from queueing
+        return this.graph_promise;
+      }
+    },
+    poll_git: function () {
+      if (this.polling === null) {
+        axios.get('/watch', { headers: { 'gitlost-repo': this.repo } })
+          /*
+          polling = $.ajax({
+            type: "GET",
+            url: "/watch"
+          })
+          */
+          .then((result) => {
+            result = result.data;
+            this.polling = null;
+            if (result.close) {
+            } else if (result.heartbeat) {
+              setTimeout(() => this.poll_git(), 1);
+            } else {
+              console.log(result);
+              setTimeout(() => this.get_graph(), 1);
+            }
+          })
+          .catch((err) => {
+            this.polling = null;
+            console.log(err);
+          });
+      }
     }
-    function poll_git() {
-        if (polling === null) {
-            polling = $.ajax({
-                type: "GET",
-                url: "/watch"
-            })
-            .then(function (result) {
-                polling = null;
-                if (result.close) {
-                } else if (result.heartbeat) {
-                    setTimeout(poll_git, 1);
-                } else {
-                    console.log(result);
-                    setTimeout(get_graph, 1);
-                }
-            })
-            .catch(function (err) {
-                polling = null;
-                console.log(err);
-            });
-        }
+  },
+  mounted: function () {
+    axios.get('/refs', { headers: {'gitlost-repo': this.repo } })
+    .then(response => {
+      this.updateRefs(response.data.refs);
+      var settings = JSON.parse(localStorage[this.repo] || '{}');
+      for (setting in settings) this.settings[setting] = settings[setting];
+  
+      this.graph = this.$el.querySelector(".graph");
+      this.get_graph(this);
+    });
+  },
+  watch: {
+    settings: {
+      handler(new_settings) {
+        localStorage[this.repo] = JSON.stringify(new_settings);
+      },
+      deep: true
     }
-    // startup
-    get_graph();
+  }
 });
