@@ -21,3 +21,13 @@ svg {
 .v-toolbar__content .v-input__control > .v-input__slot {
     margin-bottom: 0px;
 }
+
+.commit-tab-split > #pane_1 {
+    overflow: auto;
+}
+
+pre {
+    font-size: 0.75em;
+    overflow: scroll;
+    height: 400px;
+}

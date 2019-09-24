@@ -6,6 +6,9 @@ Vue.component('gitlost-graph', {
       // treeview
       items: [],
       search: null,
+      // tab view
+      commit_tab: null,
+      commits: [],
       // ui elements
       graph: null,
       // ui
@@ -14,10 +17,14 @@ Vue.component('gitlost-graph', {
       nav_expand: [0],
       loading: false,
       goto: null,
+      commitTabSize: 0.1,
       sidebarSize: 20,
+      sidebarLastSize: null,
+      // polling
       graph_queued: false,
       graph_promise: null,
       polling: null,
+      //
       settings: {
         branches: [],
         opened: [],
@@ -28,6 +35,48 @@ Vue.component('gitlost-graph', {
     }
   },
   methods: {
+    toggleCommitTab: function () {
+      if (this.commits.length > 0) {
+        var sliderHeight = this.$el.querySelector('.commit_tab').querySelector('.v-tabs-bar').clientHeight;
+        var tabHeight = this.$el.querySelector('.commit_tab').clientHeight;
+        if (sliderHeight === tabHeight) {
+          window.setTimeout(() => this.toggleCommitTab());
+        } else {
+          var totalHeight = this.$el.querySelector('.graph_bar').clientHeight;
+          this.commitTabSize = tabHeight/totalHeight*100;
+        }
+      } else {
+        this.commitTabSize = 0.1;
+      }
+    },
+    toggleCommitResized: function (event) {
+      commitTabSize = event[1].width;
+      var sliderHeight = this.$el.querySelector('.commit_tab').querySelector('.v-tabs-bar').clientHeight;
+      var tabHeight = this.$el.querySelector('.graph_bar').querySelector('#pane_1').clientHeight;
+      var textHeight = tabHeight - sliderHeight;
+      this.$el.querySelectorAll('.commit_text').forEach(text => {
+        text.style.height = textHeight + 'px';
+      });
+    },
+    toggleSidebar: function() {
+      if (this.sidebarLastSize === null) {
+        this.sidebarLastSize = this.sidebarSize;
+        this.sidebarSize = 0.1;
+      } else {
+        this.sidebarSize = this.sidebarLastSize;
+        this.sidebarLastSize = null;
+      }
+    },
+    addCommitTab: function (commit) {
+      this.commits.push(commit);
+      window.setTimeout(() => {
+        this.commit_tab = this.commits.length - 1;
+        this.toggleCommitTab();
+      });
+    },
+    removeCommitTab: function (commit_id) {
+      this.commits.splice(this.commits.findIndex(commit => commit.id === commit_id), 1);
+    },
     selectTree: function (stuff) {
       this.zoom_graph_on(stuff[0].ref_prefixes[0] + stuff[0].id);
       //console.log(stuff);
@@ -97,9 +146,9 @@ Vue.component('gitlost-graph', {
       //console.log(newTree);
       //this.settings.branches = settings.settings.branches.map(branch => { return { id: branch }; });
     },
-    zoom_graph_on: function () {
+    zoom_graph_on: function (value) {
       // TODO: remove jquery, search item data for key
-      this.zoom_graph_to($(this.graph).find("text:contains(" + this.goto + ")"));
+      this.zoom_graph_to($(this.graph).find("text:contains(" + value + ")"));
     },
     zoom_graph_to: function (target) {
       var gv = d3.select(this.graph).graphviz();
@@ -121,7 +170,8 @@ Vue.component('gitlost-graph', {
           zoomScaleExtent: [0.1, 100],
         })
         .transition(t)
-        .renderDot(dot, function () {
+        .renderDot(dot, () => {
+          var v = this;
           var $graph = $(this.graph);
           $graph
             .children('svg')
@@ -135,9 +185,14 @@ Vue.component('gitlost-graph', {
               that.removeAttr('href');
               that.css('cursor', 'pointer');
             })
-            .click(function (event) {
+            .click((event) => {
               event.preventDefault();
-              zoom_graph_to(event.target);
+              var commit_id = $(event.currentTarget).data('href').substring(5);
+              axios.get('show/'+commit_id, { headers: { 'gitlost-repo': this.repo } })
+              .then(output => {
+                this.addCommitTab(output.data);
+              })
+              //zoom_graph_to(event.target);
               return;
               var that = $(this);
               axios.get(that.data('href'), { headers: { 'gitlost-repo': this.repo } })
@@ -264,6 +319,7 @@ Vue.component('gitlost-graph', {
       }
     },
     poll_git: function () {
+      return;
       if (this.polling === null) {
         axios.get('/watch', { headers: { 'gitlost-repo': this.repo } })
           /*
@@ -308,5 +364,20 @@ Vue.component('gitlost-graph', {
       },
       deep: true
     }
+  }
+});
+
+Vue.component('gitlost-commit', {
+  props: ['commit'],
+  data() {
+    return {
+
+    }
+  },
+  methods: {
+
+  },
+  watch: {
+
   }
 });
