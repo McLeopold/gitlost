@@ -38,7 +38,7 @@
         <v-text-field label="Add Repo" @keyup.enter.native="add_repo"></v-text-field>
       </v-app-bar>
       <v-content>
-      <gitlost-graph inline-template v-for="index in selected_repos_indexes" :repo="repos[index]" :key="index">
+      <gitlost-graph inline-template v-for="index in selected_repos_indexes" :repo="repos[index]" :key="index" style="height: 88vh;">
         <v-card class="ma-4">
           <v-toolbar elevation="0" dark>
             <v-app-bar-nav-icon @click="toggleSidebar()"></v-app-bar-nav-icon>
@@ -102,7 +102,7 @@
               </v-sheet>
               <v-tabs v-model="commit_tab" class="commit_tab" :splitpanes-size="commitTabSize">
                 <v-tabs-slider></v-tabs-slider>
-                <v-tab v-for="commit in commits" :key="commit.id">
+                <v-tab v-for="commit in commits" :key="commit.id" @click="zoom_graph_on(commit.id.substring(0,4))">
                   {{ commit.id.substring(0,8) }}
                   <v-btn icon @click.close="removeCommitTab(commit.id)"><v-icon dense>mdi-close</v-icon></v-btn>
                 </v-tab>

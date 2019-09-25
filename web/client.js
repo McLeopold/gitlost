@@ -50,13 +50,15 @@ Vue.component('gitlost-graph', {
       }
     },
     toggleCommitResized: function (event) {
-      commitTabSize = event[1].width;
+      this.commitTabSize = event[1].width;
+      /*
       var sliderHeight = this.$el.querySelector('.commit_tab').querySelector('.v-tabs-bar').clientHeight;
       var tabHeight = this.$el.querySelector('.graph_bar').querySelector('#pane_1').clientHeight;
       var textHeight = tabHeight - sliderHeight;
       this.$el.querySelectorAll('.commit_text').forEach(text => {
         text.style.height = textHeight + 'px';
       });
+      */
     },
     toggleSidebar: function() {
       if (this.sidebarLastSize === null) {
@@ -319,7 +321,6 @@ Vue.component('gitlost-graph', {
       }
     },
     poll_git: function () {
-      return;
       if (this.polling === null) {
         axios.get('/watch', { headers: { 'gitlost-repo': this.repo } })
           /*
@@ -347,6 +348,10 @@ Vue.component('gitlost-graph', {
     }
   },
   mounted: function () {
+    axios.get('/git/status', { headers: {'gitlost-repo': this.repo } })
+    .then(reponse => {
+
+    });
     axios.get('/refs', { headers: {'gitlost-repo': this.repo } })
     .then(response => {
       this.updateRefs(response.data.refs);
