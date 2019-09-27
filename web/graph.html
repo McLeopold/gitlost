@@ -10,10 +10,8 @@
   <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@mdi/font@3.x/css/materialdesignicons.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
-  <link href="https://unpkg.com/splitpanes/dist/splitpanes.css" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 
-  <script src="https://unpkg.com/splitpanes"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
   <script src="//cdn.jsdelivr.net/npm/sortablejs@1.8.4/Sortable.min.js"></script>
@@ -38,7 +36,7 @@
         <v-text-field label="Add Repo" @keyup.enter.native="add_repo"></v-text-field>
       </v-app-bar>
       <v-content>
-      <gitlost-graph inline-template v-for="index in selected_repos_indexes" :repo="repos[index]" :key="index" style="height: 88vh;">
+      <gitlost-graph inline-template v-for="index in selected_repos_indexes" :repo="repos[index]" :key="index">
         <v-card class="ma-4">
           <v-toolbar elevation="0" dark>
             <v-app-bar-nav-icon @click="toggleSidebar()"></v-app-bar-nav-icon>
@@ -53,8 +51,9 @@
               <v-btn text value="TB"><v-icon>mdi-transfer-down</v-icon></v-btn>
             </v-btn-toggle>
           </v-toolbar>
-          <splitpanes class="default-theme" watch-slots @resized="sidebarSize = $event[0].width || 20">
-            <v-sheet :splitpanes-size="sidebarSize" splitpanes-min="0" class="pa-2" style="background-color: #ffffff" elevation="0">
+          <v-row>
+            <v-col cols="3">
+            <v-sheet class="pa-2" style="background-color: #ffffff" elevation="0">
               <v-btn block :loading="loading" :disabled="loading" @click="updateGraph">Refresh Graph</v-btn>
               <v-text-field v-model="goto" label="find" clearable clear-icon="mdi-close-circle-outline" @keyup.enter.native="zoom_graph_on(goto)"></v-text-field>
               <v-expansion-panels accordion multiple :value="nav_expand">
@@ -97,10 +96,18 @@
                 </v-expansion-panel>
               </v-expansion-panels>
             </v-sheet>
-            <splitpanes class="graph_bar" horizontal watch-slots :splitpanes-size="100 - sidebarSize" height="100%" @resized="toggleCommitResized($event)">
-              <v-sheet :splitpanes-size="100 - commitTabSize" class="graph" height="100%">
+            </v-col>
+            <v-col cols="9">
+
+          <v-row>
+            <v-col>
+              <v-sheet class="graph" height="100%" min-height="50vh" style="border: dashed 1px rgb(198, 206, 214);">
               </v-sheet>
-              <v-tabs v-model="commit_tab" class="commit_tab" :splitpanes-size="commitTabSize">
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12">
+              <v-tabs v-model="commit_tab" class="commit_tab">
                 <v-tabs-slider></v-tabs-slider>
                 <v-tab v-for="commit in commits" :key="commit.id" @click="zoom_graph_on(commit.id.substring(0,4))">
                   {{ commit.id.substring(0,8) }}
@@ -114,8 +121,10 @@
                   </gitlost-commit>
                 </v-tab-item>
               </v-tabs>
-            </splitpanes>
-          </splitpanes>
+            </v-col>
+          </v-row>
+            </v-col>
+          </v-row>
         </v-card>
       </gitlost-graph>
       </v-content>
@@ -125,7 +134,7 @@
 
     var vm = new Vue({
       el: '#app',
-      components: { splitpanes },
+      components: { },
       vuetify: new Vuetify(),
       data() {
         return {

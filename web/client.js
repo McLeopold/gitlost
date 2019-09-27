@@ -1,5 +1,5 @@
 Vue.component('gitlost-graph', {
-  components: { splitpanes },
+  components: { },
   props: ['repo'],
   data() {
     return {

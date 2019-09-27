@@ -10,14 +10,6 @@ svg {
     background-color: #ffffff;
 }
 
-.splitpanes--vertical {
-    display: flex;
-}
-
-.splitpanes__pane {
-    height: auto;
-}
-
 .v-toolbar__content .v-input__control > .v-input__slot {
     margin-bottom: 0px;
 }
