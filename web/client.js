@@ -14,7 +14,7 @@ Vue.component('gitlost-graph', {
       // ui
       top_items: ['HEAD', 'master', 'tags', ''],
       draw_types: ['dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp', 'patchwork', 'osage'],
-      nav_expand: [0],
+      nav_expand: [0,1],
       loading: false,
       goto: null,
       commitTabSize: 0.1,
@@ -146,7 +146,7 @@ Vue.component('gitlost-graph', {
         else if (!treeLoc.ref_prefixes.includes(ref.prefix)) treeLoc.ref_prefixes.push(ref.prefix);
       });
       //console.log(newTree);
-      //this.settings.branches = settings.settings.branches.map(branch => { return { id: branch }; });
+      //this.settings.branches = this.settings.branches.map(branch => { return { id: branch }; });
     },
     zoom_graph_on: function (value) {
       // TODO: remove jquery, search item data for key
@@ -194,32 +194,6 @@ Vue.component('gitlost-graph', {
               .then(output => {
                 this.addCommitTab(output.data);
               })
-              //zoom_graph_to(event.target);
-              return;
-              var that = $(this);
-              axios.get(that.data('href'), { headers: { 'gitlost-repo': this.repo } })
-                /*
-                $.ajax({
-                  type: "GET",
-                  url: that.data('href')
-                })
-                */
-                .then(function (output) {
-                  //output = output.data;
-                  //var outputArray = JSON.parse(output);
-                  BootstrapDialog.show({
-                    title: that.data('href').slice(5),
-                    message: '<ul class="nav nav-tabs" id="tabContent"><li class="active"><a href="#details" data-toggle="tab">Details</a></li><li><a href="#status" data-toggle="tab">Status</a></li></ul>'
-                      + '<div class="tab-content">'
-                      + '<div class="tab-pane active" id="details">'
-                      + '<br/><pre>' + output[2] + '</pre>'
-                      + '</div>'
-                      + '<div class="tab-pane" id="status">'
-                      + '<br/><pre>' + output[1] + '</pre>'
-                      + '</div>'
-                      + '</div>'
-                  });
-                })
             });
         });
       // add right click menus
@@ -355,11 +329,13 @@ Vue.component('gitlost-graph', {
     axios.get('/refs', { headers: {'gitlost-repo': this.repo } })
     .then(response => {
       this.updateRefs(response.data.refs);
-      var settings = JSON.parse(localStorage[this.repo] || '{}');
-      for (setting in settings) this.settings[setting] = settings[setting];
-  
-      this.graph = this.$el.querySelector(".graph");
-      this.get_graph(this);
+      window.setTimeout(() => {
+        var settings = JSON.parse(localStorage[this.repo] || '{}');
+        for (setting in settings) this.settings[setting] = settings[setting];
+    
+        this.graph = this.$el.querySelector(".graph");
+        this.get_graph(this);
+      }, 1);
     });
   },
   watch: {
