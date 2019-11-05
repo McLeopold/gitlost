@@ -178,7 +178,7 @@ Vue.component('gitlost-graph', {
           $graph
             .children('svg')
             .height('100%')
-            .width('100%');;
+            .width('100%');
           $graph
             .find('a')
             .each(function () {
@@ -187,6 +187,7 @@ Vue.component('gitlost-graph', {
               that.removeAttr('href');
               that.css('cursor', 'pointer');
             })
+            .unbind('click')
             .click((event) => {
               event.preventDefault();
               var commit_id = $(event.currentTarget).data('href').substring(5);
