@@ -17,6 +17,12 @@ function request(method, url, options) {
   });
 }
 
+contextBridge.exposeInMainWorld('gitlostApi', {
+  selectFolder: function () {
+    return ipcRenderer.invoke('gitlost:select-folder');
+  }
+});
+
 contextBridge.exposeInMainWorld('axios', {
   get: function (url, options) {
     return request('get', url, options);

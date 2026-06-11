@@ -336,18 +336,39 @@ window.addEventListener('DOMContentLoaded', function () {
         repos: [],
         selected_repos: [],
         selected_repos_indexes: [],
+        new_repo: '',
       }
     },
     methods: {
-      add_repo: function(event) {
-        var repo = event.target.value;
-        console.log(repo);
+      add_repo: function() {
+        var repo = this.new_repo.trim();
+        if (!repo) return;
         axios.get('/git/status', { headers: { 'gitlost-repo': repo }})
         .then(result => {
-          this.repos.push(repo);
-          this.selected_repos.push(repo);
-          event.target.value = '';
+          if (this.repos.indexOf(repo) === -1) {
+            this.repos.push(repo);
+          }
+          var idx = this.repos.indexOf(repo);
+          if (this.selected_repos_indexes.indexOf(idx) === -1) {
+            this.selected_repos_indexes.push(idx);
+          }
+          this.new_repo = '';
         })
+      },
+      select_folder: function() {
+        window.gitlostApi.selectFolder().then(folder => {
+          if (!folder) return;
+          axios.get('/git/status', { headers: { 'gitlost-repo': folder }})
+          .then(result => {
+            if (this.repos.indexOf(folder) === -1) {
+              this.repos.push(folder);
+            }
+            var idx = this.repos.indexOf(folder);
+            if (this.selected_repos_indexes.indexOf(idx) === -1) {
+              this.selected_repos_indexes.push(idx);
+            }
+          });
+        });
       },
       remove_repo: function(repo) {
         var index = this.repos.indexOf(repo);

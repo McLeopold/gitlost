@@ -29,7 +29,8 @@
           <v-chip v-for="repo in repos" filter outlined close v-bind:key="repo" @click:close="remove_repo(repo)">{{repo}}</v-chip>
         </v-chip-group>
         <div style="flex: 4;"></div>
-        <v-text-field label="Add Repo" @keyup.enter.native="add_repo"></v-text-field>
+        <v-text-field label="Add Repo" v-model="new_repo" @keyup.enter.native="add_repo" style="max-width: 300px;"></v-text-field>
+        <v-btn icon @click="select_folder" title="Browse for folder"><v-icon>mdi-folder-open</v-icon></v-btn>
       </v-app-bar>
       <v-main>
       <gitlost-graph inline-template v-for="index in selected_repos_indexes" :repo="repos[index]" :key="index">

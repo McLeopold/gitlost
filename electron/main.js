@@ -1,5 +1,5 @@
 const path = require('path');
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 
 const ipcApi = require('../lib/ipc-api');
 
@@ -30,6 +30,16 @@ function createWindow() {
 
 ipcMain.handle('gitlost:get', function (_event, payload) {
   return ipcApi.handle_get(payload && payload.url, payload && payload.headers);
+});
+
+ipcMain.handle('gitlost:select-folder', async function (_event) {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory']
+  });
+  if (result.canceled || result.filePaths.length === 0) {
+    return null;
+  }
+  return result.filePaths[0];
 });
 
 ipcMain.handle('gitlost:put', function (_event, payload) {
