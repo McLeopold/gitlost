@@ -1,23 +1,24 @@
-const { app, BrowserWindow } = require('electron');
+const path = require('path');
+const { app, BrowserWindow, ipcMain } = require('electron');
 
-const server = require('../lib/server');
+const ipcApi = require('../lib/ipc-api');
 
 let mainWindow = null;
-let isServerListening = false;
-const defaultPort = parseInt(process.env.GITLOST_PORT || '6776', 10);
 
-function createWindow(url) {
+function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     show: false,
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      sandbox: false
     }
   });
 
-  mainWindow.loadURL(url);
+  mainWindow.loadFile(path.join(__dirname, '../web/graph.html'));
   mainWindow.once('ready-to-show', function () {
     mainWindow.show();
   });
@@ -27,36 +28,21 @@ function createWindow(url) {
   });
 }
 
-function ensureServerStarted() {
-  return new Promise(function (resolve, reject) {
-    if (isServerListening && server.listening) {
-      const address = server.address();
-      resolve('http://127.0.0.1:' + address.port + '/');
-      return;
-    }
+ipcMain.handle('gitlost:get', function (_event, payload) {
+  return ipcApi.handle_get(payload && payload.url, payload && payload.headers);
+});
 
-    server.once('error', function (err) {
-      reject(err);
-    });
-
-    server.listen(defaultPort, '127.0.0.1', function () {
-      isServerListening = true;
-      const address = server.address();
-      resolve('http://127.0.0.1:' + address.port + '/');
-    });
-  });
-}
+ipcMain.handle('gitlost:put', function (_event, payload) {
+  return ipcApi.handle_put(payload && payload.url, payload && payload.headers);
+});
 
 app.whenReady()
   .then(function () {
-    return ensureServerStarted();
-  })
-  .then(function (url) {
-    createWindow(url);
+    createWindow();
 
     app.on('activate', function () {
       if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow(url);
+        createWindow();
       }
     });
   })
@@ -72,7 +58,5 @@ app.on('window-all-closed', function () {
 });
 
 app.on('before-quit', function () {
-  if (server.listening) {
-    server.close();
-  }
+  ipcApi.close_all();
 });
