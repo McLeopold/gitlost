@@ -325,3 +325,50 @@ Vue.component('gitlost-commit', {
 
   }
 });
+
+window.addEventListener('DOMContentLoaded', function () {
+  var vm = new Vue({
+    el: '#app',
+    components: { },
+    vuetify: new Vuetify(),
+    data() {
+      return {
+        repos: [],
+        selected_repos: [],
+        selected_repos_indexes: [],
+      }
+    },
+    methods: {
+      add_repo: function(event) {
+        var repo = event.target.value;
+        console.log(repo);
+        axios.get('/git/status', { headers: { 'gitlost-repo': repo }})
+        .then(result => {
+          this.repos.push(repo);
+          this.selected_repos.push(repo);
+          event.target.value = '';
+        })
+      },
+      remove_repo: function(repo) {
+        var index = this.repos.indexOf(repo);
+        if (index !== -1) this.repos.splice(index, 1);
+      },
+
+    },
+    mounted() {
+      if (localStorage.gitlost_repos) {
+        this.repos = JSON.parse(localStorage.gitlost_repos || '[]');
+        this.selected_repos = JSON.parse(localStorage.gitlost_selected_repos || '[]');
+        this.selected_repos_indexes = this.selected_repos.map(repo => this.repos.indexOf(repo));
+      }
+    },
+    watch: {
+      repos(new_repos) {
+        localStorage.gitlost_repos = JSON.stringify(new_repos);
+      },
+      selected_repos_indexes(new_selected_repos_indexes) {
+        localStorage.gitlost_selected_repos = JSON.stringify(new_selected_repos_indexes.map(i => this.repos[i]));
+      },
+    }
+  });
+});
