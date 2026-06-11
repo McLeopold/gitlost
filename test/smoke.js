@@ -78,6 +78,7 @@ async function runBinSmoke() {
 
   const child = spawn(process.execPath, [path.join('bin', 'gitlost.js')], {
     cwd: path.join(__dirname, '..'),
+    env: Object.assign({}, process.env, { GITLOST_NO_OPEN: '1' }),
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe']
   });
