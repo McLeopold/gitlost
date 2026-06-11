@@ -9,6 +9,7 @@
     "bootstrap3-dialog": "^1.35.3",
     "d3": "^7.9.0",
     "d3-graphviz": "^5.6.0",
+    "electron-updater": "^6.8.9",
     "jquery": "^3.7.1",
     "md5": "^2.2.1",
     "open": "^11.0.0",
@@ -19,14 +20,77 @@
     "vuetify": "^2.7.2"
   },
   "devDependencies": {
-    "electron": "^33.2.1"
+    "electron": "^33.2.1",
+    "electron-builder": "^26.15.2"
   },
   "scripts": {
     "start": "node ./bin/gitlost.js",
     "start:electron": "electron ./electron/main.js",
     "test": "node test/smoke.js",
     "vendor:web": "node ./scripts/sync-web-vendor.js",
-    "postinstall": "node ./scripts/sync-web-vendor.js"
+    "postinstall": "node ./scripts/sync-web-vendor.js",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux",
+    "release": "electron-builder --publish always"
+  },
+  "build": {
+    "appId": "io.hamiltonian.gitlost",
+    "productName": "GitLost",
+    "copyright": "Copyright © 2026 Scott Hamilton",
+    "main": "electron/main.js",
+    "files": [
+      "electron/**",
+      "lib/**",
+      "web/**",
+      "bin/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "McLeopold",
+      "repo": "gitlost"
+    }
   },
   "repository": {
     "type": "git",

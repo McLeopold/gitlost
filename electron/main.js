@@ -1,5 +1,6 @@
 const path = require('path');
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 
 const ipcApi = require('../lib/ipc-api');
 
@@ -49,6 +50,8 @@ ipcMain.handle('gitlost:put', function (_event, payload) {
 app.whenReady()
   .then(function () {
     createWindow();
+
+    autoUpdater.checkForUpdatesAndNotify();
 
     app.on('activate', function () {
       if (BrowserWindow.getAllWindows().length === 0) {
