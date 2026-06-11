@@ -39,7 +39,9 @@
     "appId": "io.hamiltonian.gitlost",
     "productName": "GitLost",
     "copyright": "Copyright © 2026 Scott Hamilton",
-    "main": "electron/main.js",
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
     "files": [
       "electron/**",
       "lib/**",
