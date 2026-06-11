@@ -14,6 +14,8 @@
 1. Run `gitlost` from a PowerShell window
 1. **ENJOY!**
 
+For a fresh clone, run `npm install` first. That downloads the dependencies and regenerates the ignored `web/vendor/` assets automatically.
+
 ## Usage
 
 [TODO - Add Usage and command tips]

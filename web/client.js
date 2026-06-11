@@ -170,6 +170,7 @@ Vue.component('gitlost-graph', {
         .select(this.graph)
         .graphviz({
           zoomScaleExtent: [0.1, 100],
+          useWorker: false,
         })
         .transition(t)
         .renderDot(dot, () => {

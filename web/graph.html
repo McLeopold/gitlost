@@ -4,21 +4,25 @@
 <head>
   <meta charset="utf-8" />
   <title>GitLost</title>
-  <script src="https://code.jquery.com/jquery-3.1.1.js"
-    integrity="sha256-16cdPddA6VdVInumRGo6IbivbERE8p7CQR3HzTBuELA=" crossorigin="anonymous"></script>
+  <script src="vendor/js/jquery.min.js"></script>
 
-  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@3.x/css/materialdesignicons.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <link href="vendor/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="vendor/css/vuetify.min.css" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 
-  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.8.4/Sortable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.20.0/vuedraggable.umd.min.js"></script>
-  <script src="https://d3js.org/d3.v5.js"></script>
-  <script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
-  <script src="https://unpkg.com/d3-graphviz@2.6.1/build/d3-graphviz.min.js"></script>
+  <script src="vendor/js/vue.min.js"></script>
+  <script src="vendor/js/vuetify.min.js"></script>
+  <script src="vendor/js/Sortable.min.js"></script>
+  <script src="vendor/js/vuedraggable.umd.min.js"></script>
+  <script src="vendor/js/d3.min.js"></script>
+  <script src="vendor/js/graphviz-worker.js" type="javascript/worker" id="graphviz-worker"></script>
+  <script>
+    (function () {
+      var workerScript = document.getElementById('graphviz-worker');
+      workerScript.setAttribute('src', new URL(workerScript.getAttribute('src'), document.baseURI).href);
+    })();
+  </script>
+  <script src="vendor/js/d3-graphviz.min.js"></script>
   <script src="client.js"></script>
   <link rel="stylesheet" href="graph.css" />
 </head>

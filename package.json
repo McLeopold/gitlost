@@ -5,12 +5,18 @@
   "main": "./lib/graph.js",
   "bin": "./bin/gitlost.js",
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "bootstrap3-dialog": "^1.35.3",
     "d3": "^7.9.0",
     "d3-graphviz": "^5.6.0",
+    "jquery": "^3.7.1",
     "md5": "^2.2.1",
     "open": "^11.0.0",
-    "sortablejs": "^1.15.7"
+    "sortablejs": "^1.15.7",
+    "viz.js": "^2.1.2",
+    "vue": "^2.7.16",
+    "vuedraggable": "^2.24.3",
+    "vuetify": "^2.7.2"
   },
   "devDependencies": {
     "electron": "^33.2.1"
@@ -18,7 +24,9 @@
   "scripts": {
     "start": "node ./bin/gitlost.js",
     "start:electron": "electron ./electron/main.js",
-    "test": "node test/smoke.js"
+    "test": "node test/smoke.js",
+    "vendor:web": "node ./scripts/sync-web-vendor.js",
+    "postinstall": "node ./scripts/sync-web-vendor.js"
   },
   "repository": {
     "type": "git",
