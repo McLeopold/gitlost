@@ -12,7 +12,12 @@
     "open": "^11.0.0",
     "sortablejs": "^1.15.7"
   },
+  "devDependencies": {
+    "electron": "^33.2.1"
+  },
   "scripts": {
+    "start": "node ./bin/gitlost.js",
+    "start:electron": "electron ./electron/main.js",
     "test": "node test/smoke.js"
   },
   "repository": {
