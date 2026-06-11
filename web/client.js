@@ -170,6 +170,7 @@ Vue.component('gitlost-graph', {
         .select(this.graph)
         .graphviz({
           zoomScaleExtent: [0.1, 100],
+          useWorker: false,
         })
         .transition(t)
         .renderDot(dot, () => {
@@ -323,4 +324,72 @@ Vue.component('gitlost-commit', {
   watch: {
 
   }
+});
+
+window.addEventListener('DOMContentLoaded', function () {
+  var vm = new Vue({
+    el: '#app',
+    components: { },
+    vuetify: new Vuetify(),
+    data() {
+      return {
+        repos: [],
+        selected_repos: [],
+        selected_repos_indexes: [],
+        new_repo: '',
+      }
+    },
+    methods: {
+      add_repo: function() {
+        var repo = this.new_repo.trim();
+        if (!repo) return;
+        axios.get('/git/status', { headers: { 'gitlost-repo': repo }})
+        .then(result => {
+          if (this.repos.indexOf(repo) === -1) {
+            this.repos.push(repo);
+          }
+          var idx = this.repos.indexOf(repo);
+          if (this.selected_repos_indexes.indexOf(idx) === -1) {
+            this.selected_repos_indexes.push(idx);
+          }
+          this.new_repo = '';
+        })
+      },
+      select_folder: function() {
+        window.gitlostApi.selectFolder().then(folder => {
+          if (!folder) return;
+          axios.get('/git/status', { headers: { 'gitlost-repo': folder }})
+          .then(result => {
+            if (this.repos.indexOf(folder) === -1) {
+              this.repos.push(folder);
+            }
+            var idx = this.repos.indexOf(folder);
+            if (this.selected_repos_indexes.indexOf(idx) === -1) {
+              this.selected_repos_indexes.push(idx);
+            }
+          });
+        });
+      },
+      remove_repo: function(repo) {
+        var index = this.repos.indexOf(repo);
+        if (index !== -1) this.repos.splice(index, 1);
+      },
+
+    },
+    mounted() {
+      if (localStorage.gitlost_repos) {
+        this.repos = JSON.parse(localStorage.gitlost_repos || '[]');
+        this.selected_repos = JSON.parse(localStorage.gitlost_selected_repos || '[]');
+        this.selected_repos_indexes = this.selected_repos.map(repo => this.repos.indexOf(repo));
+      }
+    },
+    watch: {
+      repos(new_repos) {
+        localStorage.gitlost_repos = JSON.stringify(new_repos);
+      },
+      selected_repos_indexes(new_selected_repos_indexes) {
+        localStorage.gitlost_selected_repos = JSON.stringify(new_selected_repos_indexes.map(i => this.repos[i]));
+      },
+    }
+  });
 });

@@ -2,3 +2,5 @@
 node_modules
 log
 web/viz.js
+web/vendor/
+dist/
