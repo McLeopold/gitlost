@@ -2,7 +2,6 @@ const assert = require('assert');
 const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
-const server = require('../lib/server');
 
 function request(port, pathName, options) {
   const config = options || {};
@@ -10,7 +9,7 @@ function request(port, pathName, options) {
   return new Promise((resolve, reject) => {
     const req = http.request(
       {
-        hostname: config.hostname || '127.0.0.1',
+        hostname: config.hostname || 'localhost',
         port,
         path: pathName,
         method: config.method || 'GET',
@@ -39,7 +38,7 @@ function requestWithTimeout(port, pathName, options, timeoutMs) {
   return new Promise((resolve, reject) => {
     const req = http.request(
       {
-        hostname: config.hostname || '127.0.0.1',
+        hostname: config.hostname || 'localhost',
         port,
         path: pathName,
         method: config.method || 'GET',
@@ -75,6 +74,8 @@ function requestWithTimeout(port, pathName, options, timeoutMs) {
 }
 
 async function runBinSmoke() {
+  console.log('bin/gitlost.js output:');
+
   const child = spawn(process.execPath, [path.join('bin', 'gitlost.js')], {
     cwd: path.join(__dirname, '..'),
     windowsHide: true,
@@ -84,66 +85,78 @@ async function runBinSmoke() {
   let stdout = '';
   let stderr = '';
   let started = false;
+  let cleanedUp = false;
+
+  async function cleanup() {
+    if (cleanedUp) {
+      return;
+    }
+    cleanedUp = true;
+
+    if (!child.killed) {
+      child.kill();
+    }
+
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, 1000);
+      child.once('close', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
+  }
 
   child.stdout.on('data', (data) => {
-    stdout += data.toString('utf8');
+    const text = data.toString('utf8');
+    stdout += text;
+    process.stdout.write(text);
     if (stdout.includes('6776')) {
       started = true;
     }
   });
 
   child.stderr.on('data', (data) => {
-    stderr += data.toString('utf8');
+    const text = data.toString('utf8');
+    stderr += text;
+    process.stderr.write(text);
   });
 
-  await new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error('bin/gitlost.js did not report startup output in time.'));
-    }, 10000);
+  try {
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('bin/gitlost.js did not report startup output in time.'));
+      }, 10000);
 
-    const onExit = (code) => {
-      clearTimeout(timeout);
-      reject(new Error('bin/gitlost.js exited early with code ' + code + '. stderr: ' + stderr));
-    };
+      const onExit = (code) => {
+        clearTimeout(timeout);
+        reject(new Error('bin/gitlost.js exited early with code ' + code + '. stderr: ' + stderr));
+      };
 
-    child.once('exit', onExit);
+      child.once('exit', onExit);
 
-    const poll = setInterval(() => {
-      if (!started) {
-        return;
-      }
+      const poll = setInterval(() => {
+        if (!started) {
+          return;
+        }
 
-      clearInterval(poll);
-      clearTimeout(timeout);
-      child.removeListener('exit', onExit);
-      resolve();
-    }, 50);
-  });
+        clearInterval(poll);
+        clearTimeout(timeout);
+        child.removeListener('exit', onExit);
+        resolve();
+      }, 50);
+    });
 
-  const root = await request(6776, '/', { hostname: 'localhost' });
-  assert.strictEqual(root.statusCode, 200, 'Expected bin script server GET / to return HTTP 200');
+    const root = await request(6776, '/', { hostname: 'localhost' });
+    assert.strictEqual(root.statusCode, 200, 'Expected bin script server GET / to return HTTP 200');
 
-  console.log('bin/gitlost.js startup output:');
-  console.log(stdout.trim());
-
-  child.kill();
-  await new Promise((resolve) => child.once('close', resolve));
+    await runBrowserFlowSmoke(6776);
+  } finally {
+    await cleanup();
+  }
 }
 
-async function runBrowserFlowSmoke() {
+async function runBrowserFlowSmoke(port) {
   const repo = path.join(__dirname, '..');
-  let port;
-
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      port = address && address.port;
-      resolve();
-    });
-  });
-
-  assert.ok(port, 'Server did not start on a valid port');
 
   const root = await request(port, '/');
   assert.strictEqual(root.statusCode, 200, 'Expected GET / to return HTTP 200');
@@ -199,24 +212,15 @@ async function runBrowserFlowSmoke() {
   );
 
   console.log('Browser-flow smoke passed: status, refs, dot, show, and watch long-poll behavior validated.');
-
-  if (server.listening) {
-    await new Promise((resolve) => server.close(resolve));
-  }
 }
 
 (async () => {
   try {
     await runBinSmoke();
-    await runBrowserFlowSmoke();
     console.log('Smoke test passed.');
   } catch (err) {
     console.error('Smoke test failed.');
     console.error(err && err.stack ? err.stack : err);
     process.exitCode = 1;
-  } finally {
-    if (server.listening) {
-      await new Promise((resolve) => server.close(resolve));
-    }
   }
 })();
