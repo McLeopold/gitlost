@@ -24,7 +24,8 @@
     "electron-builder": "^26.15.2"
   },
   "scripts": {
-    "start": "node ./bin/gitlost.js",
+    "start": "electron ./electron/main.js",
+    "start:web": "node ./bin/gitlost.js",
     "start:electron": "electron ./electron/main.js",
     "test": "node test/smoke.js",
     "vendor:web": "node ./scripts/sync-web-vendor.js",
