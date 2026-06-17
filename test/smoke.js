@@ -178,6 +178,7 @@ async function runBrowserFlowSmoke(port) {
 
   const localStorageLikeSettings = {
     branches: ['master', 'HEAD'],
+    commits: [],
     opened: [],
     rankdir: 'LR',
     include_forward: false,

@@ -108,6 +108,17 @@
                             </v-list-item-action>
                           </v-list-item>
                         </draggable>
+                        <v-subheader>Commits</v-subheader>
+                        <v-list-item dense v-for="commit in settings.commits" :key="commit">
+                          <v-list-item-content>
+                            <v-list-item-title v-text="commit"></v-list-item-title>
+                          </v-list-item-content>
+                          <v-list-item-action class="ma-0">
+                            <v-btn icon @click="remove_commit(commit)">
+                              <v-icon>mdi-close-circle-outline</v-icon>
+                            </v-btn>
+                          </v-list-item-action>
+                        </v-list-item>
                       </v-list-item-group>
                     </v-list>
                   </v-expansion-panel-content>
@@ -132,6 +143,13 @@
             <v-col>
               <v-sheet class="graph" height="100%" min-height="50vh" style="border: dashed 1px rgb(198, 206, 214);">
               </v-sheet>
+              <v-menu v-model="graph_context.show" :position-x="graph_context.x" :position-y="graph_context.y" absolute offset-y>
+                <v-list dense>
+                  <v-list-item @click="add_commit_from_context">
+                    <v-list-item-title>Add Commit</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
             </v-col>
           </v-row>
           <v-row>

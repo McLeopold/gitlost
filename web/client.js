@@ -11,8 +11,14 @@ Vue.component('gitlost-graph', {
       commits: [],
       // ui elements
       graph: null,
+      graph_context: {
+        show: false,
+        x: 0,
+        y: 0,
+        commit: null,
+      },
       // ui
-      top_items: ['HEAD', 'master', 'tags', ''],
+      top_items: ['HEAD', 'master', 'tags', 'commits', ''],
       draw_types: ['dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp', 'patchwork', 'osage'],
       nav_expand: [0,1],
       loading: false,
@@ -27,6 +33,7 @@ Vue.component('gitlost-graph', {
       //
       settings: {
         branches: [],
+        commits: [],
         opened: [],
         rankdir: 'LR',
         include_forward: false,
@@ -80,11 +87,53 @@ Vue.component('gitlost-graph', {
       this.commits.splice(this.commits.findIndex(commit => commit.id === commit_id), 1);
     },
     selectTree: function (stuff) {
-      this.zoom_graph_on(stuff[0].ref_prefixes[0] + stuff[0].id);
-      //console.log(stuff);
+      if (!stuff || stuff.length === 0) {
+        return;
+      }
+      var node = stuff[0];
+      if (node.tree_type === 'commit') {
+        this.zoom_graph_on(node.id.substring(0, 4));
+        return;
+      }
+      if (!node.ref_prefixes || node.ref_prefixes.length === 0) {
+        return;
+      }
+      this.zoom_graph_on(node.ref_prefixes[0] + node.id);
     },
     remove_branch: function (id) {
       this.settings.branches.splice(this.settings.branches.findIndex(branch => branch.id === id), 1);
+    },
+    add_commit: function (id) {
+      if (!/^[0-9a-f]{40}$/i.test(id || '')) {
+        return;
+      }
+      if (this.settings.commits.indexOf(id) === -1) {
+        this.settings.commits.push(id);
+      }
+      this.updateRefs([]);
+      this.updateGraph();
+    },
+    remove_commit: function (id) {
+      var index = this.settings.commits.findIndex(commit => commit === id);
+      if (index !== -1) {
+        this.settings.commits.splice(index, 1);
+        this.updateRefs([]);
+      }
+    },
+    open_graph_context: function (event, id) {
+      this.graph_context.show = false;
+      this.graph_context.x = event.clientX;
+      this.graph_context.y = event.clientY;
+      this.graph_context.commit = id;
+      this.$nextTick(() => {
+        this.graph_context.show = true;
+      });
+    },
+    add_commit_from_context: function () {
+      if (this.graph_context.commit) {
+        this.add_commit(this.graph_context.commit);
+      }
+      this.graph_context.show = false;
     },
     updateGraph: function () {
       this.loading = true;
@@ -97,6 +146,7 @@ Vue.component('gitlost-graph', {
       }, 1);
     },
     updateRefs: function (refs) {
+      refs = refs || [];
       var sortedRefs = refs
         .map(function (ref) {
           return ref.ref_name.replace('refs/', '');
@@ -196,6 +246,16 @@ Vue.component('gitlost-graph', {
               .then(output => {
                 this.addCommitTab(output.data);
               })
+            })
+            .unbind('contextmenu')
+            .bind('contextmenu', (event) => {
+              event.preventDefault();
+              var commit_id = $(event.currentTarget).data('href').substring(5);
+              if (/^[0-9a-f]{40}$/i.test(commit_id)) {
+                this.open_graph_context(event, commit_id);
+              } else {
+                this.graph_context.show = false;
+              }
             });
         });
     },
@@ -220,6 +280,7 @@ Vue.component('gitlost-graph', {
               branches: this.settings.branches.map(branch =>
                 branch.ref_prefixes.map(prefix => prefix + branch.id)
               ).flat(),
+              commits: this.settings.commits.slice(),
               rankdir: this.settings.rankdir,
               include_forward: this.settings.include_forward,
               draw_type: this.settings.draw_type,
@@ -295,6 +356,10 @@ Vue.component('gitlost-graph', {
       window.setTimeout(() => {
         var settings = JSON.parse(localStorage[this.repo] || '{}');
         for (setting in settings) this.settings[setting] = settings[setting];
+        if (!Array.isArray(this.settings.commits)) {
+          this.settings.commits = [];
+        }
+        this.updateRefs(response.data.refs);
     
         this.graph = this.$el.querySelector(".graph");
         this.get_graph(this);
