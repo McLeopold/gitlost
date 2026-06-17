@@ -18,7 +18,7 @@ Vue.component('gitlost-graph', {
         commit: null,
       },
       // ui
-      top_items: ['HEAD', 'master', 'tags', 'commits', ''],
+      top_items: ['HEAD', 'main', 'tags', ''],
       draw_types: ['dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp', 'patchwork', 'osage'],
       nav_expand: [0,1],
       loading: false,
@@ -186,8 +186,8 @@ Vue.component('gitlost-graph', {
             : { prefix: '', parts: ref_name.split('/'), name: ref_name };
         })
         .sort(function (a, b) {
-          if (a.parts[0] === 'master') return b.parts[0] !== 'master' ? -1 : a.parts[0] === '' ? -1 : 1;
-          if (b.parts[0] === 'master') return 1;
+          if (a.parts[0] === 'main') return b.parts[0] !== 'main' ? -1 : a.parts[0] === '' ? -1 : 1;
+          if (b.parts[0] === 'main') return 1;
           if (a.tag && !b.tag) return 1;
           if (b.tag && !a.tag) return -1;
           if (a.parts.length > 1 && b.parts.length === 1) return -1;
@@ -313,7 +313,7 @@ Vue.component('gitlost-graph', {
               include_forward: this.settings.include_forward,
               draw_type: this.settings.draw_type,
             };
-            if (passed_settings.branches.length === 0) passed_settings.branches = ['master'];
+            if (passed_settings.branches.length === 0) passed_settings.branches = ['main'];
             return axios.get('/dot', { headers: {
               'gitlost-repo': this.repo,
               'gitlost-settings': JSON.stringify(passed_settings)

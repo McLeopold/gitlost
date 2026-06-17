@@ -177,7 +177,7 @@ async function runBrowserFlowSmoke(port) {
   assert.ok(Array.isArray(refsPayload.refs), 'Expected /refs payload to include refs array');
 
   const localStorageLikeSettings = {
-    branches: ['master', 'HEAD'],
+    branches: ['main', 'HEAD'],
     commits: [],
     opened: [],
     rankdir: 'LR',
