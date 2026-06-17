@@ -109,16 +109,18 @@
                           </v-list-item>
                         </draggable>
                         <v-subheader>Commits</v-subheader>
-                        <v-list-item dense v-for="commit in settings.commits" :key="commit">
-                          <v-list-item-content>
-                            <v-list-item-title v-text="commit"></v-list-item-title>
-                          </v-list-item-content>
-                          <v-list-item-action class="ma-0">
-                            <v-btn icon @click="remove_commit(commit)">
-                              <v-icon>mdi-close-circle-outline</v-icon>
-                            </v-btn>
-                          </v-list-item-action>
-                        </v-list-item>
+                        <draggable v-model="settings.commits">
+                          <v-list-item dense v-for="commit in settings.commits" :key="commit">
+                            <v-list-item-content>
+                              <v-list-item-title v-text="commit"></v-list-item-title>
+                            </v-list-item-content>
+                            <v-list-item-action class="ma-0">
+                              <v-btn icon @click="remove_commit(commit)">
+                                <v-icon>mdi-close-circle-outline</v-icon>
+                              </v-btn>
+                            </v-list-item-action>
+                          </v-list-item>
+                        </draggable>
                       </v-list-item-group>
                     </v-list>
                   </v-expansion-panel-content>
