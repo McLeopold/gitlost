@@ -31,7 +31,39 @@
         <div style="flex: 4;"></div>
         <v-text-field label="Add Repo" v-model="new_repo" @keyup.enter.native="add_repo" style="max-width: 300px;"></v-text-field>
         <v-btn icon @click="select_folder" title="Browse for folder"><v-icon>mdi-folder-open</v-icon></v-btn>
+        <v-btn icon @click="toggle_log" title="Show/hide git log"><v-icon>mdi-console</v-icon></v-btn>
       </v-app-bar>
+      <v-overlay v-model="show_log" z-index="100" opacity="1" color="#1e1e1e" style="align-items: flex-start;">
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; background: #1e1e1e;">
+          <div style="display: flex; align-items: center; background: #333; padding: 4px 8px; flex-shrink: 0;">
+            <span style="color: #fff; font-size: 14px; font-weight: bold;">Git Log</span>
+            <div style="flex: 1;"></div>
+            <v-btn icon dark small @click="fetch_log" title="Refresh"><v-icon small>mdi-refresh</v-icon></v-btn>
+            <v-btn icon dark small @click="show_log = false" title="Close"><v-icon small>mdi-close</v-icon></v-btn>
+          </div>
+          <div style="flex: 1; overflow: auto; padding: 8px;">
+            <table style="border-collapse: collapse; width: 100%; font-family: monospace; font-size: 12px;">
+              <tbody>
+                <template v-for="(entry, i) in log_entries">
+                  <tr :key="'cmd'+i" @click="toggle_log_entry(entry)" style="cursor: pointer;">
+                    <td style="padding: 4px 8px; white-space: nowrap; overflow: hidden; text-overflow: clip; color: #64b5f6;">{{ entry.cmd }}</td>
+                  </tr>
+                  <tr :key="'res'+i" v-show="log_expanded[log_entry_key(entry)]" style="border-bottom: 1px solid #2d2d2d;">
+                    <td v-if="entry.error" style="padding: 4px 8px; white-space: pre; color: #ef9a9a;">{{ entry.error }}</td>
+                    <td v-else style="padding: 4px 8px; white-space: pre; color: #a5d6a7;">{{ entry.result || '' }}</td>
+                  </tr>
+                </template>
+                <tr v-if="log_entries.length === 0">
+                  <td style="padding: 8px; color: #666; font-style: italic;">No commands logged yet.</td>
+                </tr>
+                <tr v-if="log_error">
+                  <td style="padding: 8px; color: #ef9a9a;">Log error: {{ log_error }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </v-overlay>
       <v-main>
       <gitlost-graph inline-template v-for="index in selected_repos_indexes" :repo="repos[index]" :key="index">
         <v-card class="ma-4">

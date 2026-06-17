@@ -327,7 +327,54 @@ Vue.component('gitlost-commit', {
 });
 
 window.addEventListener('DOMContentLoaded', function () {
-  var vm = new Vue({
+  var vm = null;
+  var pending_log_refresh = false;
+
+  function should_refresh_log(url) {
+    var normalized = url || '';
+    if (normalized[0] !== '/') normalized = '/' + normalized;
+    return normalized !== '/watch';
+  }
+
+  var original_get = axios.get.bind(axios);
+  var original_put = axios.put.bind(axios);
+
+  function refresh_log_after_request(url) {
+    if (!should_refresh_log(url)) {
+      return;
+    }
+    if (vm) {
+      vm.schedule_log_refresh();
+    } else {
+      pending_log_refresh = true;
+    }
+  }
+
+  axios.get = function (url, options) {
+    return original_get(url, options)
+      .then(function (response) {
+        refresh_log_after_request(url);
+        return response;
+      })
+      .catch(function (err) {
+        refresh_log_after_request(url);
+        throw err;
+      });
+  };
+
+  axios.put = function (url, options) {
+    return original_put(url, options)
+      .then(function (response) {
+        refresh_log_after_request(url);
+        return response;
+      })
+      .catch(function (err) {
+        refresh_log_after_request(url);
+        throw err;
+      });
+  };
+
+  vm = new Vue({
     el: '#app',
     components: { },
     vuetify: new Vuetify(),
@@ -337,9 +384,60 @@ window.addEventListener('DOMContentLoaded', function () {
         selected_repos: [],
         selected_repos_indexes: [],
         new_repo: '',
+        show_log: false,
+        log_entries: [],
+        log_error: '',
+        log_expanded: {},
+        log_refresh_pending: false,
       }
     },
     methods: {
+      log_entry_key: function(entry) {
+        var tail = entry.error ? ('e:' + entry.error) : ('r:' + (entry.result || ''));
+        return [entry.timestamp || '', entry.cmd || '', tail].join('|');
+      },
+      fetch_log: function() {
+        Promise.resolve()
+          .then(() => {
+            if (!window.gitlostApi || typeof window.gitlostApi.getLog !== 'function') {
+              throw new Error('gitlostApi.getLog is unavailable');
+            }
+            return window.gitlostApi.getLog();
+          })
+          .then(entries => {
+            entries = (entries || []).slice().reverse();
+            var next_expanded = {};
+            entries.forEach((entry) => {
+              var key = this.log_entry_key(entry);
+              if (this.log_expanded[key]) next_expanded[key] = true;
+            });
+            this.log_entries = entries;
+            this.log_expanded = next_expanded;
+            this.log_error = '';
+          })
+          .catch((err) => {
+            this.log_error = (err && err.message) ? err.message : String(err);
+            console.log('Failed to load git log:', err);
+          });
+      },
+      schedule_log_refresh: function() {
+        if (this.log_refresh_pending) return;
+        this.log_refresh_pending = true;
+        window.setTimeout(() => {
+          this.log_refresh_pending = false;
+          this.fetch_log();
+        }, 0);
+      },
+      toggle_log_entry: function(entry) {
+        var key = this.log_entry_key(entry);
+        this.$set(this.log_expanded, key, !this.log_expanded[key]);
+      },
+      toggle_log: function() {
+        if (!this.show_log) {
+          this.fetch_log();
+        }
+        this.show_log = !this.show_log;
+      },
       add_repo: function() {
         var repo = this.new_repo.trim();
         if (!repo) return;
@@ -377,6 +475,13 @@ window.addEventListener('DOMContentLoaded', function () {
 
     },
     mounted() {
+      this.fetch_log();
+      this.schedule_log_refresh();
+      if (pending_log_refresh) {
+        pending_log_refresh = false;
+        this.schedule_log_refresh();
+      }
+
       if (localStorage.gitlost_repos) {
         this.repos = JSON.parse(localStorage.gitlost_repos || '[]');
         this.selected_repos = JSON.parse(localStorage.gitlost_selected_repos || '[]');

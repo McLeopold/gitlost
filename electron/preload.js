@@ -20,6 +20,9 @@ function request(method, url, options) {
 contextBridge.exposeInMainWorld('gitlostApi', {
   selectFolder: function () {
     return ipcRenderer.invoke('gitlost:select-folder');
+  },
+  getLog: function () {
+    return ipcRenderer.invoke('gitlost:get-log');
   }
 });
 

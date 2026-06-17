@@ -47,6 +47,10 @@ ipcMain.handle('gitlost:put', function (_event, payload) {
   return ipcApi.handle_put(payload && payload.url, payload && payload.headers);
 });
 
+ipcMain.handle('gitlost:get-log', function () {
+  return ipcApi.get_log();
+});
+
 app.whenReady()
   .then(function () {
     createWindow();
