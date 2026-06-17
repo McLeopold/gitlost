@@ -135,6 +135,34 @@ Vue.component('gitlost-graph', {
       }
       this.graph_context.show = false;
     },
+    copy_commit_from_context: function () {
+      var commit = this.graph_context.commit;
+      if (!commit) {
+        this.graph_context.show = false;
+        return;
+      }
+      var copy_with_fallback = function () {
+        var input = document.createElement('textarea');
+        input.value = commit;
+        input.setAttribute('readonly', '');
+        input.style.position = 'absolute';
+        input.style.left = '-9999px';
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+      };
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(commit)
+          .catch(function () {
+            copy_with_fallback();
+          });
+      } else {
+        copy_with_fallback();
+      }
+      this.graph_context.show = false;
+    },
     updateGraph: function () {
       this.loading = true;
       //var branches = this.settings.branches.map(branch => branch.ref_prefixes.map(prefix => prefix + branch.id)).flat();
